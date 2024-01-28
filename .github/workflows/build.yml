@@ -1,0 +1,30 @@
+name: Build Binaries
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["master"]
+
+# Allow one concurrent deployment
+concurrency:
+  group: "build"
+  cancel-in-progress: true
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Hugo CLI
+        run: sudo apt install hugo
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+
+      - name: Cargo Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
