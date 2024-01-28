@@ -15,14 +15,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Hugo CLI
-        run: sudo apt install hugo
-
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
 
       - name: Cargo Build
         uses: actions-rs/cargo@v1
