@@ -1,10 +1,12 @@
 use clap::Parser;
-use std::str;
+use std::{thread};
 
 use log::{error, info, warn};
 use simplelog::*;
 use std::fs::File;
 use std::net::{SocketAddr, UdpSocket};
+
+use dnstplib::dns_socket::DNSSocket;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -37,22 +39,8 @@ fn main() {
         .map(|x| x.parse().expect("Couldn't parse address"))
         .collect();
 
-    match UdpSocket::bind(&addresses[..]) {
-        Ok(s) => {
-            loop {
-                let mut buf = [0; 512];
-                let res = s.recv_from(&mut buf);
+    let mut socket = DNSSocket::new(addresses);
+    socket.run();
 
-                match res {
-                    Ok(r) => {
-                        let res_str = str::from_utf8(&buf).unwrap();
-                        info!("{}", res_str);
-                    }
-                    Err(_) => {}
-                }
-            }
-        }
-        Err(e) => error!("couldn't bind to address {}", e)
-    }
-
+    thread::park();
 }

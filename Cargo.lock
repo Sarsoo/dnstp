@@ -122,11 +122,15 @@ dependencies = [
  "clap",
  "dnstplib",
  "log",
+ "simplelog",
 ]
 
 [[package]]
 name = "dnstplib"
 version = "0.1.0"
+dependencies = [
+ "log",
+]
 
 [[package]]
 name = "heck"
