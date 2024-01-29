@@ -1,19 +1,20 @@
 use std::fs::File;
-use std::net::{SocketAddr, UdpSocket};
+use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
 use clap::Parser;
-use log::{error, info, LevelFilter};
+use log::{info, LevelFilter};
 use simplelog::*;
 use dnstplib::dns_socket::DNSSocket;
 use dnstplib::raw_request::NetworkMessage;
-use dnstplib::request_processor::RequestProcesor;
 use dnstplib::response_processor::ResponseProcesor;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-
+    /// Addresses to send requests
+    #[arg(short, long)]
+    address: String,
 }
 
 fn main() {
@@ -51,7 +52,7 @@ fn main() {
 
         tx_channel.send(Box::from(NetworkMessage {
             buffer: Box::from(send_buf),
-            peer: "127.0.0.1:5000".parse().unwrap()
+            peer: args.address.parse().unwrap()
         }));
 
         thread::sleep(Duration::from_secs(1));

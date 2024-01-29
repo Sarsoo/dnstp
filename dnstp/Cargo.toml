@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 log = "0.4.20"
+url = "2.5.0"
