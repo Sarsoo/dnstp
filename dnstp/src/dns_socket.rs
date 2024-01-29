@@ -6,11 +6,15 @@ use log::{error, info};
 use std::str;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use crate::raw_request::{NetworkMessage, NetworkMessagePtr};
 
 pub struct DNSSocket {
     addresses: Vec<SocketAddr>,
-    thread: Option<JoinHandle<()>>,
-    thread_killer: Option<Sender<()>>
+    rx_thread: Option<JoinHandle<()>>,
+    rx_thread_killer: Option<Sender<()>>,
+    tx_thread: Option<JoinHandle<()>>,
+    tx_message_channel: Option<Sender<NetworkMessagePtr>>,
+    tx_thread_killer: Option<Sender<()>>
 }
 
 impl DNSSocket {
@@ -18,8 +22,11 @@ impl DNSSocket {
     {
         DNSSocket {
             addresses,
-            thread: None,
-            thread_killer: None
+            rx_thread: None,
+            rx_thread_killer: None,
+            tx_thread: None,
+            tx_message_channel: None,
+            tx_thread_killer: None
         }
     }
 
@@ -38,17 +45,17 @@ impl DNSSocket {
     {
         match UdpSocket::bind(&self.addresses[..]) {
             Ok(s) => Option::from(s),
-            Err(e) => None
+            Err(_) => None
         }
     }
 
-    pub fn run(&mut self)
+    pub fn run_rx(&mut self, message_sender: Sender<NetworkMessagePtr>)
     {
         let (tx, rx): (Sender<()>, Receiver<()>) = mpsc::channel();
-        self.thread_killer = Some(tx);
+        self.rx_thread_killer = Some(tx);
         let socket = self.bind();
 
-        self.thread = Some(thread::spawn(move || {
+        self.rx_thread = Some(thread::spawn(move || {
 
             match socket {
                 None => {
@@ -57,13 +64,21 @@ impl DNSSocket {
                 Some(s) => {
                     let mut cancelled = false;
                     while !cancelled {
-                        let mut buf = [0; 512];
-                        let res = s.recv_from(&mut buf);
+                        let mut buf = Box::new([0; 512]);
+                        let res = s.recv_from(&mut (*buf));
 
                         match res {
-                            Ok(r) => {
-                                let res_str = str::from_utf8(&buf).unwrap();
-                                info!("received: {}", res_str);
+                            Ok((_, peer)) => {
+                                let res_str = str::from_utf8(&(*buf)).unwrap();
+                                info!("received [{}] from [{}]", res_str, peer);
+                                match message_sender.send(Box::new(NetworkMessage {
+                                    buffer: buf,
+                                    peer
+                                }))
+                                {
+                                    Ok(_) => {}
+                                    Err(_) => {}
+                                }
                             }
                             Err(_) => {}
                         }
@@ -76,14 +91,50 @@ impl DNSSocket {
                 }
             };
 
-            info!("socket thread finishing")
+            info!("socket rx thread finishing")
         }));
+    }
+
+    pub fn run_tx(&mut self)
+    {
+        let (tx, rx): (Sender<()>, Receiver<()>) = mpsc::channel();
+        self.tx_thread_killer = Some(tx);
+
+        let (msg_tx, msg_rx): (Sender<NetworkMessagePtr>, Receiver<NetworkMessagePtr>) = mpsc::channel();
+        self.tx_message_channel = Option::from(msg_tx);
+
+        self.tx_thread = Some(thread::spawn(move || {
+
+            let mut cancelled = false;
+            while !cancelled {
+
+                for m in &msg_rx {
+                    info!("sending [{}] to [{}]", str::from_utf8(&(*(*m).buffer)).unwrap(), (*m).peer);
+                }
+
+                cancelled = match rx.try_recv() {
+                    Ok(_) | Err(TryRecvError::Disconnected) => true,
+                    _ => false
+                }
+            }
+
+            info!("socket tx thread finishing")
+        }));
+    }
+
+    pub fn get_tx_message_channel(&mut self) -> Option<Sender<NetworkMessagePtr>>
+    {
+        self.tx_message_channel.clone()
     }
 
     pub fn stop(&mut self)
     {
         // if let Some(t) = &mut self.thread {
-            if let Some(k) = &self.thread_killer {
+            if let Some(k) = &self.rx_thread_killer {
+                k.send(());
+                // t.join();
+            }
+            if let Some(k) = &self.tx_thread_killer {
                 k.send(());
                 // t.join();
             }

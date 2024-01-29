@@ -1,12 +1,13 @@
 use clap::Parser;
 use std::{thread};
 
-use log::{error, info, warn};
+use log::info;
 use simplelog::*;
 use std::fs::File;
-use std::net::{SocketAddr, UdpSocket};
+use std::net::SocketAddr;
 
 use dnstplib::dns_socket::DNSSocket;
+use dnstplib::request_processor::RequestProcesor;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -40,7 +41,12 @@ fn main() {
         .collect();
 
     let mut socket = DNSSocket::new(addresses);
-    socket.run();
+    socket.run_tx();
+
+    let mut processor = RequestProcesor::new();
+    processor.run(socket.get_tx_message_channel().expect("couldn't get message transmitting channel"));
+
+    socket.run_rx(processor.get_message_channel().expect("couldn't get message processing channel"));
 
     thread::park();
 }
