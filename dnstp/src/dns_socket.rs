@@ -1,5 +1,4 @@
 use std::net::{SocketAddr, UdpSocket};
-use std::ptr::read;
 use std::thread;
 use std::thread::{JoinHandle};
 use log::{debug, error, info};
@@ -83,8 +82,8 @@ impl DNSSocket {
 
                         match res {
                             Ok((read_count, peer)) => {
-                                let res_str = str::from_utf8(&(*buf)).unwrap();
-                                info!("received [{}] from [{}]", res_str, peer);
+                                // let res_str = str::from_utf8(&(*buf)).unwrap();
+                                // info!("received [{}] from [{}]", res_str, peer);
 
                                 if read_count > HEADER_SIZE {
                                     message_sender.send(Box::new(NetworkMessage {

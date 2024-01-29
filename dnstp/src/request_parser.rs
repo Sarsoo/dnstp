@@ -1,5 +1,8 @@
 use crate::dns_header::{Direction, DNSHeader, Opcode, ResponseCode};
 use crate::dns_header::Direction::Response;
+use crate::dns_question::{DNSQuestion, questions_from_bytes};
+use crate::dns_request::DNSRequest;
+use crate::raw_request::NetworkMessage;
 
 fn two_byte_extraction(buffer: &[u8], idx: usize) -> u16
 {
@@ -112,6 +115,30 @@ pub fn parse_header_to_bytes(header: &DNSHeader) -> [u8; 12]
     apply_split_bytes(&mut header_bytes, header.additional_record_count, ADDITIONAL_RECORD_COUNT_START);
 
     header_bytes
+}
+
+pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, ()>
+{
+    let header = parse_header(msg.buffer[0..12].try_into().unwrap());
+
+    match header {
+        Ok(header) => {
+            let mut trimmed = msg.buffer.to_vec();
+            trimmed.drain(0 .. 12);
+            match questions_from_bytes(trimmed, header.question_count)
+            {
+                Ok(questions) => {
+                    Ok(DNSRequest {
+                        header,
+                        questions,
+                        peer: msg.peer
+                    })
+                }
+                Err(_) => Err(())
+            }
+        },
+        Err(_) => Err(())
+    }
 }
 
 #[cfg(test)]

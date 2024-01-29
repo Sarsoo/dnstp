@@ -2,7 +2,7 @@ use std::ops::Sub;
 use urlencoding::{encode, decode};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
-enum QType {
+pub enum QType {
     A = 1,
     NS = 2,
     CNAME = 5,
@@ -42,7 +42,7 @@ impl TryFrom<u8> for QType {
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
-enum QClass {
+pub enum QClass {
     Internet = 1,
     Chaos = 3,
     Hesiod = 4,
@@ -62,7 +62,7 @@ impl TryFrom<u8> for QClass {
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
-struct DNSQuestion {
+pub struct DNSQuestion {
     qname: String,
     qtype: QType,
     qclass: QClass
@@ -102,9 +102,9 @@ impl DNSQuestion {
     }
 }
 
-pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u8) -> Result<Vec<DNSQuestion>, ()>
+pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<Vec<DNSQuestion>, ()>
 {
-    if (bytes.len() < 4)
+    if bytes.len() < 4
     {
         return Err(());
     }
@@ -117,87 +117,68 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u8) -> Result<Vec<D
     let mut current_qtype: Option<u8> = None;
     let mut current_qclass: Option<u8> = None;
     let mut trailers_reached = false;
+    // let mut finished = false;
 
     for byte in bytes {
-        match current_length {
-            None => { // next question, init lengths
-                current_length = Some(byte);
-                remaining_length = Box::from(byte);
-                current_query = Some(Vec::with_capacity(10));
-            }
-            Some(_) => {
-                if byte == 0 {
-                    trailers_reached = true;
-                    continue
-                }
-
-                if *remaining_length == 0 && !trailers_reached {
-                    current_query.as_mut().unwrap().push('.' as u8);
+        if questions.len() != total_questions as usize {
+            match current_length {
+                None => { // next question, init lengths
                     current_length = Some(byte);
                     remaining_length = Box::from(byte);
+                    current_query = Some(Vec::with_capacity(10));
                 }
-                else if trailers_reached { // trailer fields
-                    match current_qtype {
-                        None => {
-                            current_qtype = Some(byte);
-                        }
-                        Some(qtype_b) => {
-                            match current_qclass {
-                                None => {
-                                    current_qclass = Some(byte);
-                                }
-                                Some(qclass_b) => {
+                Some(_) => {
+                    if byte == 0 {
+                        trailers_reached = true;
+                        continue
+                    }
 
-                                    match (qtype_b.try_into(), qclass_b.try_into()) {
-                                        (Ok(qtype), Ok(qclass)) => {
-                                            questions.push(DNSQuestion {
-                                                qname: String::from_utf8(current_query.unwrap()).unwrap(),
-                                                qtype,
-                                                qclass
-                                            });
+                    if *remaining_length == 0 && !trailers_reached {
+                        current_query.as_mut().unwrap().push('.' as u8);
+                        current_length = Some(byte);
+                        remaining_length = Box::from(byte);
+                    }
+                    else if trailers_reached { // trailer fields
+                        match current_qtype {
+                            None => {
+                                current_qtype = Some(byte);
+                            }
+                            Some(qtype_b) => {
+                                match current_qclass {
+                                    None => {
+                                        // current_qclass = Some(byte);
+                                        match (qtype_b.try_into(), byte.try_into()) {
+                                            (Ok(qtype), Ok(qclass)) => {
+                                                questions.push(DNSQuestion {
+                                                    qname: String::from_utf8(current_query.unwrap()).unwrap(),
+                                                    qtype,
+                                                    qclass
+                                                });
 
-                                            current_length = Some(byte);
-                                            remaining_length = Box::from(byte);
-                                            current_query = Some(Vec::with_capacity(10));
-                                            current_qtype = None;
-                                            current_qclass = None;
-                                            trailers_reached = false;
+                                                current_length = None;
+                                                remaining_length = Box::from(byte);
+                                                current_query = None;
+                                                current_qtype = None;
+                                                current_qclass = None;
+                                                trailers_reached = false;
+                                            }
+                                            _ => {
+                                                return Err(());
+                                            }
                                         }
-                                        _ => {
-                                            return Err(());
-                                        }
+                                    }
+                                    Some(_) => {
+
                                     }
                                 }
                             }
                         }
+                    } else {
+                        current_query.as_mut().unwrap().push(byte);
+                        *remaining_length = remaining_length.sub(1);
                     }
                 }
-                else
-                {
-                    current_query.as_mut().unwrap().push(byte);
-                    *remaining_length  = remaining_length.sub(1);
-                }
             }
-        }
-    }
-
-    match (current_qtype, current_qclass) {
-        (Some(qtype), Some(qclass)) => {
-            match (qtype.try_into(), qclass.try_into()) {
-                (Ok(qtype), Ok(qclass)) => {
-                    questions.push(DNSQuestion {
-                        qname: String::from_utf8(current_query.unwrap()).unwrap(),
-                        qtype,
-                        qclass
-                    });
-                }
-                _ => {
-                    return Err(());
-                }
-            }
-        }
-        _ => {
-            return Err(());
         }
     }
 
@@ -216,7 +197,8 @@ mod tests {
             qtype: QType::A
         };
 
-        let q_bytes = q.to_bytes();
+        let mut q_bytes = q.to_bytes();
+        q_bytes.append(&mut vec![0, 0, 0, 0, 0, 0]);
 
         let q_reconstructed = questions_from_bytes(q_bytes, 1).unwrap();
 
@@ -282,7 +264,7 @@ mod tests {
         q_bytes.append(&mut q2_bytes);
         q_bytes.append(&mut q3_bytes);
 
-        let q_reconstructed = questions_from_bytes(q_bytes, 2).unwrap();
+        let q_reconstructed = questions_from_bytes(q_bytes, 3).unwrap();
 
         assert_eq!(q.qname, q_reconstructed[0].qname);
         assert_eq!(q.qclass, q_reconstructed[0].qclass);

@@ -1,9 +1,11 @@
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::info;
+use log::{error, info};
 use std::str;
+use crate::dns_request::DNSRequest;
 use crate::raw_request::NetworkMessagePtr;
+use crate::request_parser::parse_request;
 
 pub struct RequestProcesor {
     message_channel: Option<Sender<NetworkMessagePtr>>
@@ -25,14 +27,23 @@ impl RequestProcesor {
 
             for mut m in rx
             {
-                info!("processing: {}", str::from_utf8(&(*(*m).buffer)).unwrap());
+                // info!("processing: {}", str::from_utf8(&(*(*m).buffer)).unwrap());
 
-                (*(*m).buffer).reverse();
+                let request = parse_request(*m);
 
-                match sending_channel.send(m) {
-                    Ok(_) => {}
-                    Err(_) => {}
+                match request {
+                    Ok(r) => {
+                        info!("received dns message: {:?}", r);
+                    }
+                    Err(_) => {
+                        error!("failed to parse message");
+                    }
                 }
+
+                // match sending_channel.send(m) {
+                //     Ok(_) => {}
+                //     Err(_) => {}
+                // }
             }
 
             info!("message processing thread finishing")
