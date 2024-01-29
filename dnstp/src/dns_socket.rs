@@ -10,6 +10,7 @@ use crate::raw_request::{NetworkMessage, NetworkMessagePtr};
 
 pub struct DNSSocket {
     addresses: Vec<SocketAddr>,
+    socket: Option<Box<UdpSocket>>,
     rx_thread: Option<JoinHandle<()>>,
     rx_thread_killer: Option<Sender<()>>,
     tx_thread: Option<JoinHandle<()>>,
@@ -22,6 +23,7 @@ impl DNSSocket {
     {
         DNSSocket {
             addresses,
+            socket: None,
             rx_thread: None,
             rx_thread_killer: None,
             tx_thread: None,
@@ -41,11 +43,21 @@ impl DNSSocket {
     //     }
     // }
 
-    fn bind(&mut self) -> Option<UdpSocket>
+    pub fn bind(&mut self)
     {
         match UdpSocket::bind(&self.addresses[..]) {
-            Ok(s) => Option::from(s),
-            Err(_) => None
+            Ok(s) => {
+                self.socket = Option::from(Box::from(s));
+            },
+            Err(_) => {}
+        };
+    }
+
+    fn get_socket_clone(&mut self) -> Option<Box<UdpSocket>>
+    {
+        match &self.socket {
+            Some(s) => Option::from(Box::from(s.try_clone().unwrap())),
+            None => None
         }
     }
 
@@ -53,7 +65,7 @@ impl DNSSocket {
     {
         let (tx, rx): (Sender<()>, Receiver<()>) = mpsc::channel();
         self.rx_thread_killer = Some(tx);
-        let socket = self.bind();
+        let socket = self.get_socket_clone();
 
         self.rx_thread = Some(thread::spawn(move || {
 
@@ -103,18 +115,28 @@ impl DNSSocket {
         let (msg_tx, msg_rx): (Sender<NetworkMessagePtr>, Receiver<NetworkMessagePtr>) = mpsc::channel();
         self.tx_message_channel = Option::from(msg_tx);
 
+        let socket = self.get_socket_clone();
+
         self.tx_thread = Some(thread::spawn(move || {
 
-            let mut cancelled = false;
-            while !cancelled {
-
-                for m in &msg_rx {
-                    info!("sending [{}] to [{}]", str::from_utf8(&(*(*m).buffer)).unwrap(), (*m).peer);
+            match socket {
+                None => {
+                    error!("no socket created, failed to bind to address")
                 }
+                Some(s) => {
+                    let mut cancelled = false;
+                    while !cancelled {
 
-                cancelled = match rx.try_recv() {
-                    Ok(_) | Err(TryRecvError::Disconnected) => true,
-                    _ => false
+                        for m in &msg_rx {
+                            info!("sending [{}] to [{}]", str::from_utf8(&(*(*m).buffer)).unwrap(), (*m).peer);
+                            s.send_to(&(*m.buffer), m.peer);
+                        }
+
+                        cancelled = match rx.try_recv() {
+                            Ok(_) | Err(TryRecvError::Disconnected) => true,
+                            _ => false
+                        }
+                    }
                 }
             }
 

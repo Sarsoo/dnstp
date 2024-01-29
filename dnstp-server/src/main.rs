@@ -41,6 +41,7 @@ fn main() {
         .collect();
 
     let mut socket = DNSSocket::new(addresses);
+    socket.bind();
     socket.run_tx();
 
     let mut processor = RequestProcesor::new();
