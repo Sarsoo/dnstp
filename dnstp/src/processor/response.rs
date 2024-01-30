@@ -3,7 +3,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use log::info;
 use std::str;
-use crate::raw_request::NetworkMessagePtr;
+use crate::net::raw_request::NetworkMessagePtr;
 
 pub struct ResponseProcesor {
     message_channel: Option<Sender<NetworkMessagePtr>>

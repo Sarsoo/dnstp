@@ -6,8 +6,8 @@ use simplelog::*;
 use std::fs::File;
 use std::net::SocketAddr;
 
-use dnstplib::dns_socket::DNSSocket;
-use dnstplib::request_processor::RequestProcesor;
+use dnstplib::net::socket::DNSSocket;
+use dnstplib::processor::RequestProcesor;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

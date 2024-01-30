@@ -2,12 +2,10 @@ use std::net::{SocketAddr, UdpSocket};
 use std::thread;
 use std::thread::{JoinHandle};
 use log::{debug, error, info};
-
-use std::str;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use crate::dns_header::HEADER_SIZE;
-use crate::raw_request::{NetworkMessage, NetworkMessagePtr};
+use crate::message::header::HEADER_SIZE;
+use crate::net::raw_request::{NetworkMessage, NetworkMessagePtr};
 
 pub struct DNSSocket {
     addresses: Vec<SocketAddr>,
@@ -77,13 +75,12 @@ impl DNSSocket {
                 Some(s) => {
                     let mut cancelled = false;
                     while !cancelled {
-                        let mut buf = Box::new([0; 512]);
+                        let mut buf = Box::new(Vec::with_capacity(512));
+                        buf.resize(512, 0);
                         let res = s.recv_from(&mut (*buf));
 
                         match res {
                             Ok((read_count, peer)) => {
-                                // let res_str = str::from_utf8(&(*buf)).unwrap();
-                                // info!("received [{}] from [{}]", res_str, peer);
 
                                 if read_count > HEADER_SIZE {
                                     message_sender.send(Box::new(NetworkMessage {
@@ -131,7 +128,6 @@ impl DNSSocket {
                     while !cancelled {
 
                         for m in &msg_rx {
-                            info!("sending [{}] to [{}]", str::from_utf8(&(*(*m).buffer)).unwrap(), (*m).peer);
                             if let Err(e) = s.send_to(&(*m.buffer), m.peer){
                                 error!("error sending response to [{}], {}", m.peer, e);
                             }

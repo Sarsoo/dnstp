@@ -1,43 +1,40 @@
-use crate::dns_header::{Direction, DNSHeader, Opcode, ResponseCode};
-use crate::dns_header::Direction::Response;
-use crate::dns_question::{DNSQuestion, questions_from_bytes};
-use crate::dns_request::DNSRequest;
-use crate::raw_request::NetworkMessage;
+use crate::byte;
+use crate::message::header::{Direction, DNSHeader, Opcode, ResponseCode};
+use crate::message::question::{QuestionParseError, questions_from_bytes};
+use crate::message::request::DNSRequest;
+use crate::net::raw_request::NetworkMessage;
+use crate::request_parser::RequestParseError::{HeaderParse, QuesionsParse};
 
-fn two_byte_extraction(buffer: &[u8], idx: usize) -> u16
-{
-    ((buffer[idx] as u16) << 8) | buffer[idx + 1] as u16
+pub const ID_START: usize = 0;
+pub const FLAGS_START: usize = 2;
+pub const DIRECTION_SHIFT: usize = 15;
+pub const OPCODE_SHIFT: usize = 11;
+pub const AUTHORITATIVE_SHIFT: usize = 10;
+pub const TRUNCATION_SHIFT: usize = 9;
+pub const RECURSION_DESIRED_SHIFT: usize = 8;
+pub const RECURSION_AVAILABLE_SHIFT: usize = 7;
+pub const ZEROES_SHIFT: usize = 4;
+pub const QUESTION_COUNT_START: usize = 4;
+pub const ANSWER_RECORD_COUNT_START: usize = 6;
+pub const AUTHORITY_RECORD_COUNT_START: usize = 8;
+pub const ADDITIONAL_RECORD_COUNT_START: usize = 10;
+
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+pub enum HeaderParseError {
+    OpcodeParse(u16),
+    ResponseCodeParse(u16),
 }
 
-fn two_byte_split(num: u16) -> (u8, u8)
+pub fn parse_header(header: &[u8; 12]) -> Result<DNSHeader, HeaderParseError>
 {
-    ((num >> 8) as u8, (num & 0b0000000011111111) as u8)
-}
+    let id = byte::two_byte_extraction(header, ID_START);
 
-const ID_START: usize = 0;
-const FLAGS_START: usize = 2;
-const DIRECTION_SHIFT: usize = 15;
-const OPCODE_SHIFT: usize = 11;
-const AUTHORITATIVE_SHIFT: usize = 10;
-const TRUNCATION_SHIFT: usize = 9;
-const RECURSION_DESIRED_SHIFT: usize = 8;
-const RECURSION_AVAILABLE_SHIFT: usize = 7;
-const ZEROES_SHIFT: usize = 4;
-const QUESTION_COUNT_START: usize = 4;
-const ANSWER_RECORD_COUNT_START: usize = 6;
-const AUTHORITY_RECORD_COUNT_START: usize = 8;
-const ADDITIONAL_RECORD_COUNT_START: usize = 10;
-
-pub fn parse_header(header: &[u8; 12]) -> Result<DNSHeader, ()>
-{
-    let id = two_byte_extraction(header, ID_START);
-
-    let flags = two_byte_extraction(header, FLAGS_START);
+    let flags = byte::two_byte_extraction(header, FLAGS_START);
     let direction = if flags & (0b1 << DIRECTION_SHIFT) == 0 {Direction::Request} else { Direction::Response };
 
-    let opcode: Result<Opcode, ()> = ((flags & (0b1111 << OPCODE_SHIFT)) >> OPCODE_SHIFT).try_into();
+    let opcode: Result<Opcode, u16> = ((flags & (0b1111 << OPCODE_SHIFT)) >> OPCODE_SHIFT).try_into();
     if let Err(e) = opcode {
-        return Err(e);
+        return Err(HeaderParseError::OpcodeParse(e));
     }
 
     let authoritative = (flags & (0b1 << AUTHORITATIVE_SHIFT)) != 0;
@@ -47,16 +44,16 @@ pub fn parse_header(header: &[u8; 12]) -> Result<DNSHeader, ()>
 
     let zeroes = (flags & (0b111 << ZEROES_SHIFT)) == 0;
 
-    let response: Result<ResponseCode, ()> = (flags & 0b1111).try_into();
+    let response: Result<ResponseCode, u16> = (flags & 0b1111).try_into();
     if let Err(e) = response
     {
-        return Err(e);
+        return Err(HeaderParseError::ResponseCodeParse(e));
     }
 
-    let question_count = two_byte_extraction(header, QUESTION_COUNT_START);
-    let answer_record_count = two_byte_extraction(header, ANSWER_RECORD_COUNT_START);
-    let authority_record_count = two_byte_extraction(header, AUTHORITY_RECORD_COUNT_START);
-    let additional_record_count = two_byte_extraction(header, ADDITIONAL_RECORD_COUNT_START);
+    let question_count = byte::two_byte_extraction(header, QUESTION_COUNT_START);
+    let answer_record_count = byte::two_byte_extraction(header, ANSWER_RECORD_COUNT_START);
+    let authority_record_count = byte::two_byte_extraction(header, AUTHORITY_RECORD_COUNT_START);
+    let additional_record_count = byte::two_byte_extraction(header, ADDITIONAL_RECORD_COUNT_START);
 
     Ok(DNSHeader {
         id,
@@ -79,45 +76,13 @@ pub fn parse_header(header: &[u8; 12]) -> Result<DNSHeader, ()>
     })
 }
 
-fn apply_split_bytes(buffer: &mut [u8], value: u16, index: usize)
-{
-    let val = two_byte_split(value);
-    buffer[index] = val.0;
-    buffer[index + 1] = val.1;
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+pub enum RequestParseError {
+    HeaderParse(HeaderParseError),
+    QuesionsParse(QuestionParseError),
 }
 
-pub fn parse_header_to_bytes(header: &DNSHeader) -> [u8; 12]
-{
-    let mut header_bytes: [u8; 12] = [0; 12];
-
-    apply_split_bytes(&mut header_bytes, header.id, ID_START);
-
-    let mut flags: u16 = 0;
-
-    if header.direction == Response {
-        flags |= 0b1 << DIRECTION_SHIFT;
-    }
-
-    flags |= (header.opcode as u16) << OPCODE_SHIFT;
-
-    flags |= (header.authoritative as u16) << AUTHORITATIVE_SHIFT;
-    flags |= (header.truncation as u16) << TRUNCATION_SHIFT;
-    flags |= (header.recursion_desired as u16) << RECURSION_DESIRED_SHIFT;
-    flags |= (header.recursion_available as u16) << RECURSION_AVAILABLE_SHIFT;
-
-    flags |= header.response as u16;
-
-    apply_split_bytes(&mut header_bytes, flags, FLAGS_START);
-
-    apply_split_bytes(&mut header_bytes, header.question_count, QUESTION_COUNT_START);
-    apply_split_bytes(&mut header_bytes, header.answer_record_count, ANSWER_RECORD_COUNT_START);
-    apply_split_bytes(&mut header_bytes, header.authority_record_count, AUTHORITY_RECORD_COUNT_START);
-    apply_split_bytes(&mut header_bytes, header.additional_record_count, ADDITIONAL_RECORD_COUNT_START);
-
-    header_bytes
-}
-
-pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, ()>
+pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseError>
 {
     let header = parse_header(msg.buffer[0..12].try_into().unwrap());
 
@@ -134,15 +99,16 @@ pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, ()>
                         peer: msg.peer
                     })
                 }
-                Err(_) => Err(())
+                Err(e) => Err(QuesionsParse(e))
             }
         },
-        Err(_) => Err(())
+        Err(e) => Err(HeaderParse(e))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::byte::{two_byte_extraction, two_byte_split};
     use super::*;
 
     #[test]
@@ -188,7 +154,7 @@ mod tests {
             additional_record_count: 4
         };
 
-        let parsed_bytes = parse_header_to_bytes(&header);
+        let parsed_bytes = header.to_bytes();
 
         let header_again = parse_header(&parsed_bytes).unwrap();
 

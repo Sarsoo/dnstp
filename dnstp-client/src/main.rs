@@ -4,10 +4,14 @@ use std::thread;
 use std::time::Duration;
 use clap::Parser;
 use log::{info, LevelFilter};
+use rand::RngCore;
 use simplelog::*;
-use dnstplib::dns_socket::DNSSocket;
-use dnstplib::raw_request::NetworkMessage;
-use dnstplib::response_processor::ResponseProcesor;
+use dnstplib::message::header::{Direction, DNSHeader, Opcode, ResponseCode};
+use dnstplib::message::question::{DNSQuestion, QClass, QType};
+use dnstplib::message::request::DNSRequest;
+use dnstplib::net::socket::DNSSocket;
+use dnstplib::net::raw_request::NetworkMessage;
+use dnstplib::processor::ResponseProcesor;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -40,18 +44,41 @@ fn main() {
 
     socket.run_rx(processor.get_message_channel().expect("couldn't get message processing channel"));
 
+    let mut rng = rand::thread_rng();
     loop {
 
         info!("sending...");
 
-        let mut send_buf = [0; 512];
-        send_buf[0] = 'a' as u8;
-        send_buf[1] = 'b' as u8;
-        send_buf[2] = 'c' as u8;
-        send_buf[3] = 'd' as u8;
+        let message = DNSRequest {
+            header: DNSHeader {
+                id: rng.next_u32() as u16,
+                direction: Direction::Request,
+                opcode: Opcode::Query,
+                authoritative: false,
+                truncation: false,
+                recursion_desired: true,
+                recursion_available: false,
+                valid_zeroes: true,
+                response: ResponseCode::NoError,
+                question_count: 1,
+                answer_record_count: 0,
+                authority_record_count: 0,
+                additional_record_count: 0
+            },
+            questions: vec![
+                DNSQuestion {
+                    qname: "duck.com".to_string(),
+                    qtype: QType::A,
+                    qclass: QClass::Internet
+                }
+            ],
+            peer: address
+        };
+
+        let bytes = message.to_bytes();
 
         tx_channel.send(Box::from(NetworkMessage {
-            buffer: Box::from(send_buf),
+            buffer: Box::from(bytes),
             peer: args.address.parse().unwrap()
         }));
 

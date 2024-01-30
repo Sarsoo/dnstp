@@ -1,5 +1,6 @@
 use std::ops::Sub;
 use urlencoding::{encode, decode};
+use crate::string::encode_domain_name;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum QType {
@@ -19,7 +20,7 @@ pub enum QType {
 }
 
 impl TryFrom<u8> for QType {
-    type Error = ();
+    type Error = u8;
 
     fn try_from(v: u8) -> Result<Self, Self::Error> {
         match v {
@@ -36,7 +37,7 @@ impl TryFrom<u8> for QType {
             x if x == QType::RP as u8 => Ok(QType::RP),
             x if x == QType::AAAA as u8 => Ok(QType::AAAA),
             x if x == QType::SRV as u8 => Ok(QType::SRV),
-            _ => Err(()),
+            _ => Err(v),
         }
     }
 }
@@ -49,23 +50,23 @@ pub enum QClass {
 }
 
 impl TryFrom<u8> for QClass {
-    type Error = ();
+    type Error = u8;
 
     fn try_from(v: u8) -> Result<Self, Self::Error> {
         match v {
             x if x == QClass::Internet as u8 => Ok(QClass::Internet),
             x if x == QClass::Chaos as u8 => Ok(QClass::Chaos),
             x if x == QClass::Hesiod as u8 => Ok(QClass::Hesiod),
-            _ => Err(()),
+            _ => Err(v),
         }
     }
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct DNSQuestion {
-    qname: String,
-    qtype: QType,
-    qclass: QClass
+    pub qname: String,
+    pub qtype: QType,
+    pub qclass: QClass
 }
 
 impl DNSQuestion {
@@ -80,20 +81,7 @@ impl DNSQuestion {
 
     pub fn to_bytes(&self) -> Vec<u8>
     {
-        let mut ret: Vec<u8> = Vec::with_capacity(self.qname.len() + 2 + 3);
-
-        for part in  self.qname.split(".")
-        {
-            let encoded_string = encode(part);
-            let count = encoded_string.len();
-
-            ret.push(count as u8);
-            for x in encoded_string.bytes() {
-                ret.push(x);
-            };
-        }
-
-        ret.push(0);
+        let mut ret = encode_domain_name(&self.qname);
 
         ret.push(self.qtype as u8);
         ret.push(self.qclass as u8);
@@ -102,11 +90,30 @@ impl DNSQuestion {
     }
 }
 
-pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<Vec<DNSQuestion>, ()>
+pub fn questions_to_bytes(questions: &Vec<DNSQuestion>) -> Vec<u8>
+{
+    let mut ret = Vec::with_capacity(20);
+
+    for q in questions
+    {
+        ret.append(&mut q.to_bytes());
+    }
+
+    ret
+}
+
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+pub enum QuestionParseError {
+    ShortLength(usize),
+    QTypeParse(u8),
+    QClassParse(u8)
+}
+
+pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<Vec<DNSQuestion>, QuestionParseError>
 {
     if bytes.len() < 4
     {
-        return Err(());
+        return Err(QuestionParseError::ShortLength(bytes.len()));
     }
 
     let mut questions: Vec<DNSQuestion> = Vec::with_capacity(total_questions as usize);
@@ -150,7 +157,7 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<Vec<
                                         match (qtype_b.try_into(), byte.try_into()) {
                                             (Ok(qtype), Ok(qclass)) => {
                                                 questions.push(DNSQuestion {
-                                                    qname: String::from_utf8(current_query.unwrap()).unwrap(),
+                                                    qname: decode(String::from_utf8(current_query.unwrap()).unwrap().as_str()).unwrap().to_string(),
                                                     qtype,
                                                     qclass
                                                 });
@@ -162,8 +169,11 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<Vec<
                                                 current_qclass = None;
                                                 trailers_reached = false;
                                             }
-                                            _ => {
-                                                return Err(());
+                                            (Err(qtype_e), _) => {
+                                                return Err(QuestionParseError::QTypeParse(qtype_e));
+                                            }
+                                            (_, Err(qclass_e)) => {
+                                                return Err(QuestionParseError::QClassParse(qclass_e));
                                             }
                                         }
                                     }
