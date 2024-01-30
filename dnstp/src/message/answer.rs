@@ -1,5 +1,5 @@
 use crate::byte::{four_byte_split, two_byte_split};
-use crate::message::question::{QClass, QType};
+use crate::message::question::{DNSQuestion, QClass, QType};
 use crate::string::encode_domain_name;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
@@ -14,7 +14,7 @@ pub struct DNSAnswer {
 
 impl DNSAnswer {
 
-    pub fn to_bytes(& self) -> Vec<u8>
+    pub fn to_bytes(&self) -> Vec<u8>
     {
         let mut ret = encode_domain_name(&self.name);
 
@@ -40,4 +40,16 @@ impl DNSAnswer {
 
         return ret
     }
+}
+
+pub fn answers_to_bytes(answers: &Vec<DNSAnswer>) -> Vec<u8>
+{
+    let mut ret = Vec::with_capacity(20);
+
+    for a in answers
+    {
+        ret.append(&mut a.to_bytes());
+    }
+
+    ret
 }

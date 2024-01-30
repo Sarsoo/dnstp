@@ -1,5 +1,5 @@
 use std::net::SocketAddr;
-use crate::message::answer::DNSAnswer;
+use crate::message::answer::{answers_to_bytes, DNSAnswer};
 use crate::message::header::DNSHeader;
 use crate::message::question::{DNSQuestion, questions_to_bytes};
 
@@ -17,8 +17,10 @@ impl DNSResponse {
     {
         let mut header_bytes = self.header.to_bytes().to_vec();
         let mut body_bytes = questions_to_bytes(&self.questions);
+        let mut answer_bytes = answers_to_bytes(&self.answers);
 
         header_bytes.append(&mut body_bytes);
+        header_bytes.append(&mut answer_bytes);
 
         return header_bytes
     }

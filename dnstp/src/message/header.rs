@@ -2,14 +2,17 @@ use std::convert::TryFrom;
 use crate::byte::apply_split_bytes;
 use crate::message::header::Direction::Response;
 
+/// Size in bytes for a DNS message
 pub const HEADER_SIZE: usize = 12;
 
+/// Flag for whether the message represents a request or a response
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum Direction {
     Request = 0,
     Response = 1
 }
 
+/// Operation code for describing the purpose of the message
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum Opcode {
     Query = 0,
@@ -32,6 +35,7 @@ impl TryFrom<u16> for Opcode {
     }
 }
 
+/// What is the status of the request or response, what was the nature of the error, if encountered
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum ResponseCode {
     NoError = 0,
@@ -68,17 +72,23 @@ impl TryFrom<u16> for ResponseCode {
     }
 }
 
+/// Represents a header including flag fields and record counts
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct DNSHeader {
+    /// Random ID for associating responses with requests
     pub id: u16,
+    /// Is the message a request or the associated response
     pub direction: Direction,
+    /// What is the message function, e.g query, reverse DNS query
     pub opcode: Opcode,
     pub authoritative: bool,
     pub truncation: bool,
     pub recursion_desired: bool,
     pub recursion_available: bool,
     pub valid_zeroes: bool,
+    /// Status of the request or response
     pub response: ResponseCode,
+    /// Number of questions being made, should be the same in both the request and response
     pub question_count: u16,
     pub answer_record_count: u16,
     pub authority_record_count: u16,
@@ -86,6 +96,7 @@ pub struct DNSHeader {
 }
 
 impl DNSHeader {
+    /// Serialise a header memory structure back into bytes for putting on the wire
     pub fn to_bytes(&self) -> [u8; 12]
     {
         let mut header_bytes: [u8; 12] = [0; 12];

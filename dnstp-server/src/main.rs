@@ -1,3 +1,5 @@
+//! DNS server component for processing requests and replying with DNS records
+
 use clap::Parser;
 use std::{thread};
 
@@ -9,6 +11,7 @@ use std::net::SocketAddr;
 use dnstplib::net::socket::DNSSocket;
 use dnstplib::processor::RequestProcesor;
 
+/// Command-line arguments for configuring the server
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
