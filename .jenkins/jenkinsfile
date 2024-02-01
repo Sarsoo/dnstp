@@ -3,12 +3,22 @@ pipeline {
 
     stages {
         stage('Build') {
+            agent {
+                docker {
+                    image 'rust:1.75.0-slim'
+                }
+            }
             steps {
                 sh 'cargo build'
             }
         }
 
         stage('Test') {
+            agent {
+                docker {
+                    image 'rust:1.75.0-slim'
+                }
+            }
             steps {
                 sh 'cargo test'
             }
