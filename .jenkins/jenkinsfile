@@ -4,13 +4,13 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'source ~/.cargo/env && cargo build'
+                sh 'cargo build'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'source ~/.cargo/env && cargo test'
+                sh 'cargo test'
             }
         }
     }
