@@ -6,6 +6,8 @@ pipeline {
             agent {
                 docker {
                     image 'rust:1.75.0-slim'
+                    args '--entrypoint='
+                    reuseNode true
                 }
             }
             steps {
@@ -17,6 +19,8 @@ pipeline {
             agent {
                 docker {
                     image 'rust:1.75.0-slim'
+                    args '--entrypoint='
+                    reuseNode true
                 }
             }
             steps {
