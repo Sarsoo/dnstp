@@ -2,29 +2,41 @@ pipeline {
     agent none
 
     stages {
-        stage('Build') {
-            agent {
-                docker {
-                    image 'rust:1.75.0-slim'
-                    args '-u root'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh 'cargo build'
-            }
-        }
+//         stage('Build') {
+//             agent {
+//                 docker {
+//                     image 'rust:1.75.0-slim'
+//                     args '-u root'
+//                     reuseNode true
+//                 }
+//             }
+//             steps {
+//                 sh 'cargo build'
+//             }
+//         }
+//
+//         stage('Test') {
+//             agent {
+//                 docker {
+//                     image 'rust:1.75.0-slim'
+//                     args '-u root'
+//                     reuseNode true
+//                 }
+//             }
+//             steps {
+//                 sh 'cargo test'
+//             }
+//         }
 
-        stage('Test') {
-            agent {
-                docker {
-                    image 'rust:1.75.0-slim'
-                    args '-u root'
-                    reuseNode true
-                }
-            }
+        stage('Deploy') {
+            when { branch 'master' }
             steps {
-                sh 'cargo test'
+                script {
+                    docker.withRegistry('https://registry.sarsoo.xyz', 'git-registry-creds')
+                    {
+                        docker.build("sarsoo/dnstp:latest").push()
+                    }
+                }
             }
         }
     }
