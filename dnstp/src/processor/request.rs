@@ -1,9 +1,13 @@
+use std::net::{IpAddr, Ipv4Addr};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use log::{error, info};
+use crate::message::answer::{DNSAnswer, IpRData, RawRData};
+use crate::message::header::{Direction, ResponseCode};
 use crate::message::question::QuestionParseError;
-use crate::net::raw_request::NetworkMessagePtr;
+use crate::message::response::DNSResponse;
+use crate::net::raw_request::{NetworkMessage, NetworkMessagePtr};
 use crate::request_parser::{HeaderParseError, parse_request, RequestParseError};
 
 pub struct RequestProcesor {
@@ -31,6 +35,32 @@ impl RequestProcesor {
                 match parse_request(*m) {
                     Ok(r) => {
                         info!("received dns message: {:?}", r);
+
+                        let mut response = DNSResponse{
+                            header: r.header.clone(),
+                            questions: r.questions.clone(),
+                            answers: vec![],
+                            peer: r.peer
+                        };
+
+                        // response.answers = r.questions.iter().map(|x| DNSAnswer::from_query(x, Box::from(IpRData::from(Ipv4Addr::from([127, 0, 0, 1]))), None)).collect();
+
+                        response.header.direction = Direction::Response;
+                        response.header.response = ResponseCode::NameError;
+                        response.header.answer_record_count = 0;
+                        response.header.authority_record_count = 0;
+                        response.header.additional_record_count = 0;
+
+                        if response.header.recursion_desired {
+                            response.header.recursion_available = true;
+                        }
+
+                        sending_channel.send(Box::from(
+                            NetworkMessage {
+                                buffer: Box::from(response.to_bytes()),
+                                peer: response.peer
+                            }
+                        ));
                     }
                     Err(e) => {
                         match e {
@@ -60,11 +90,6 @@ impl RequestProcesor {
                         }
                     }
                 }
-
-                // match sending_channel.send(m) {
-                //     Ok(_) => {}
-                //     Err(_) => {}
-                // }
             }
 
             info!("message processing thread finishing")

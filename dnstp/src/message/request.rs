@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use crate::message::header::DNSHeader;
 use crate::message::question::{DNSQuestion, questions_to_bytes};
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
 pub struct DNSRequest {
     pub header: DNSHeader,
     pub questions: Vec<DNSQuestion>,

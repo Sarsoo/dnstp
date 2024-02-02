@@ -92,7 +92,7 @@ pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseErro
             trimmed.drain(0 .. 12);
             match questions_from_bytes(trimmed, header.question_count)
             {
-                Ok(questions) => {
+                Ok((bytes_read, questions)) => {
                     Ok(DNSRequest {
                         header,
                         questions,

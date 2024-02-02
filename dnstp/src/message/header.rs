@@ -73,7 +73,7 @@ impl TryFrom<u16> for ResponseCode {
 }
 
 /// Represents a header including flag fields and record counts
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
 pub struct DNSHeader {
     /// Random ID for associating responses with requests
     pub id: u16,

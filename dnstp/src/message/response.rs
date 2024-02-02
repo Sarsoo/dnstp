@@ -3,7 +3,7 @@ use crate::message::answer::{answers_to_bytes, DNSAnswer};
 use crate::message::header::DNSHeader;
 use crate::message::question::{DNSQuestion, questions_to_bytes};
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Debug)]
 pub struct DNSResponse {
     pub header: DNSHeader,
     pub questions: Vec<DNSQuestion>,
