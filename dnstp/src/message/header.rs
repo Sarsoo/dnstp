@@ -128,4 +128,26 @@ impl DNSHeader {
 
         header_bytes
     }
+
+    pub fn new_request(id: u16, questions: Option<u16>) -> DNSHeader
+    {
+        DNSHeader {
+            id,
+            direction: Direction::Request,
+            opcode: Opcode::Query,
+            authoritative: false,
+            truncation: false,
+            recursion_desired: true,
+            recursion_available: false,
+            valid_zeroes: true,
+            response: ResponseCode::NoError,
+            question_count: match questions {
+                None => 1,
+                Some(v) => v
+            },
+            answer_record_count: 0,
+            authority_record_count: 0,
+            additional_record_count: 0
+        }
+    }
 }

@@ -8,7 +8,7 @@ use simplelog::*;
 use std::fs::File;
 use std::net::SocketAddr;
 
-use dnstplib::net::socket::DNSSocket;
+use dnstplib::net::DNSSocket;
 use dnstplib::processor::RequestProcesor;
 
 /// Command-line arguments for configuring the server

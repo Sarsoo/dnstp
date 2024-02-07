@@ -3,6 +3,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use log::info;
 use std::str;
+use crate::message::DNSResponse;
 use crate::net::raw_request::NetworkMessagePtr;
 
 pub struct ResponseProcesor {
@@ -25,7 +26,7 @@ impl ResponseProcesor {
 
             for mut m in rx
             {
-                info!("processing: {}", str::from_utf8(&(*(*m).buffer)).unwrap());
+                info!("processing response");
 
                 // match sending_channel.send(m) {
                 //     Ok(_) => {}
