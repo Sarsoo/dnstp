@@ -6,7 +6,8 @@ use super::*;
 #[ignore]
 fn one_answer_back_and_forth() {
     let q = DNSAnswer {
-        name: "google.com".to_string(),
+        // name_offset: "google.com".to_string(),
+        name_offset: 12,
         answer_type: QType::A,
         class: QClass::Internet,
         ttl: 0,
@@ -19,7 +20,7 @@ fn one_answer_back_and_forth() {
 
     let (q_read, q_reconstructed) = answers_from_bytes(q_bytes, 0).unwrap();
 
-    assert_eq!(q.name, q_reconstructed[0].name);
+    assert_eq!(q.name_offset, q_reconstructed[0].name_offset);
     assert_eq!(q.answer_type, q_reconstructed[0].answer_type);
     assert_eq!(q.class, q_reconstructed[0].class);
     assert_eq!(q.ttl, q_reconstructed[0].ttl);

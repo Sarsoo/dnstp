@@ -72,6 +72,7 @@ fn main() {
                     qclass: QClass::Internet
                 }
             ],
+            additional_records: vec![],
             peer: address
         };
 

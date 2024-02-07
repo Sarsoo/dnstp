@@ -1,17 +1,16 @@
 mod raw_rdata;
 pub use raw_rdata::RawRData;
 
-mod ip_address;
-pub use ip_address::IpRData;
+mod a_rdata;
+pub use a_rdata::ARdata;
 
 #[cfg(test)]
 mod tests;
 
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
+use std::fmt::Display;
 use crate::byte::{four_byte_split, two_byte_split};
-use crate::message::question::{DNSQuestion, QClass, QType, QuestionParseError};
-use crate::string::encode_domain_name;
-
+use crate::message::question::{DNSQuestion, QClass, QType};
 
 pub trait RData: Debug {
     fn to_bytes(&self) -> Vec<u8>;
@@ -19,7 +18,7 @@ pub trait RData: Debug {
 
 #[derive(Debug)]
 pub struct DNSAnswer {
-    pub name: String,
+    pub name_offset: u16,
     pub answer_type: QType,
     pub class: QClass,
     pub ttl: u32,
@@ -31,7 +30,8 @@ impl DNSAnswer {
 
     pub fn to_bytes(&self) -> Vec<u8>
     {
-        let mut ret = encode_domain_name(&self.name);
+        let (name_1, name_2) = two_byte_split(self.name_offset | (0b11 << 14));
+        let mut ret = vec![name_1, name_2];
 
         let type_split = two_byte_split(self.answer_type as u16);
         ret.push(type_split.0);
@@ -56,10 +56,10 @@ impl DNSAnswer {
         return ret
     }
 
-    pub fn from_query(query: &DNSQuestion, data: Box<dyn RData>, ttl: Option<u32>) -> DNSAnswer
+    pub fn from_query(query: &DNSQuestion, name_offset: u16, data: Box<dyn RData>, ttl: Option<u32>) -> DNSAnswer
     {
         DNSAnswer {
-            name: query.qname.clone(),
+            name_offset,
             answer_type: query.qtype,
             class: query.qclass,
             ttl: ttl.unwrap_or(0),

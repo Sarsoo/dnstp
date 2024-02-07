@@ -27,8 +27,6 @@ impl ResponseProcesor {
             {
                 info!("processing: {}", str::from_utf8(&(*(*m).buffer)).unwrap());
 
-                // (*(*m).buffer).reverse();
-
                 // match sending_channel.send(m) {
                 //     Ok(_) => {}
                 //     Err(_) => {}

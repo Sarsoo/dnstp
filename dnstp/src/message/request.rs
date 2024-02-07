@@ -6,6 +6,7 @@ use crate::message::question::{DNSQuestion, questions_to_bytes};
 pub struct DNSRequest {
     pub header: DNSHeader,
     pub questions: Vec<DNSQuestion>,
+    pub additional_records: Vec<DNSQuestion>,
     pub peer: SocketAddr
 }
 

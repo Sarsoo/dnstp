@@ -2,8 +2,10 @@
 mod tests;
 
 use urlencoding::decode;
+use crate::byte::{two_byte_extraction, two_byte_split};
 use crate::string::encode_domain_name;
 
+#[repr(u16)]
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum QType {
     A = 1,
@@ -21,29 +23,30 @@ pub enum QType {
     SRV = 33
 }
 
-impl TryFrom<u8> for QType {
-    type Error = u8;
+impl TryFrom<u16> for QType {
+    type Error = u16;
 
-    fn try_from(v: u8) -> Result<Self, Self::Error> {
+    fn try_from(v: u16) -> Result<Self, Self::Error> {
         match v {
-            x if x == QType::A as u8 => Ok(QType::A),
-            x if x == QType::NS as u8 => Ok(QType::NS),
-            x if x == QType::CNAME as u8 => Ok(QType::CNAME),
-            x if x == QType::SOA as u8 => Ok(QType::SOA),
-            x if x == QType::WKS as u8 => Ok(QType::WKS),
-            x if x == QType::PTR as u8 => Ok(QType::PTR),
-            x if x == QType::HINFO as u8 => Ok(QType::HINFO),
-            x if x == QType::MINFO as u8 => Ok(QType::MINFO),
-            x if x == QType::MX as u8 => Ok(QType::MX),
-            x if x == QType::TXT as u8 => Ok(QType::TXT),
-            x if x == QType::RP as u8 => Ok(QType::RP),
-            x if x == QType::AAAA as u8 => Ok(QType::AAAA),
-            x if x == QType::SRV as u8 => Ok(QType::SRV),
+            x if x == QType::A as u16 => Ok(QType::A),
+            x if x == QType::NS as u16 => Ok(QType::NS),
+            x if x == QType::CNAME as u16 => Ok(QType::CNAME),
+            x if x == QType::SOA as u16 => Ok(QType::SOA),
+            x if x == QType::WKS as u16 => Ok(QType::WKS),
+            x if x == QType::PTR as u16 => Ok(QType::PTR),
+            x if x == QType::HINFO as u16 => Ok(QType::HINFO),
+            x if x == QType::MINFO as u16 => Ok(QType::MINFO),
+            x if x == QType::MX as u16 => Ok(QType::MX),
+            x if x == QType::TXT as u16 => Ok(QType::TXT),
+            x if x == QType::RP as u16 => Ok(QType::RP),
+            x if x == QType::AAAA as u16 => Ok(QType::AAAA),
+            x if x == QType::SRV as u16 => Ok(QType::SRV),
             _ => Err(v),
         }
     }
 }
 
+#[repr(u16)]
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
 pub enum QClass {
     Internet = 1,
@@ -51,14 +54,14 @@ pub enum QClass {
     Hesiod = 4,
 }
 
-impl TryFrom<u8> for QClass {
-    type Error = u8;
+impl TryFrom<u16> for QClass {
+    type Error = u16;
 
-    fn try_from(v: u8) -> Result<Self, Self::Error> {
+    fn try_from(v: u16) -> Result<Self, Self::Error> {
         match v {
-            x if x == QClass::Internet as u8 => Ok(QClass::Internet),
-            x if x == QClass::Chaos as u8 => Ok(QClass::Chaos),
-            x if x == QClass::Hesiod as u8 => Ok(QClass::Hesiod),
+            x if x == QClass::Internet as u16 => Ok(QClass::Internet),
+            x if x == QClass::Chaos as u16 => Ok(QClass::Chaos),
+            x if x == QClass::Hesiod as u16 => Ok(QClass::Hesiod),
             _ => Err(v),
         }
     }
@@ -85,8 +88,15 @@ impl DNSQuestion {
     {
         let mut ret = encode_domain_name(&self.qname);
 
-        ret.push(self.qtype as u8);
-        ret.push(self.qclass as u8);
+        let (qtype_1, qtype_2) = two_byte_split(self.qtype as u16);
+
+        ret.push(qtype_1);
+        ret.push(qtype_2);
+
+        let (qclass_1, qclass_2) = two_byte_split(self.qclass as u16);
+
+        ret.push(qclass_1);
+        ret.push(qclass_2);
 
         ret
     }
@@ -107,8 +117,8 @@ pub fn questions_to_bytes(questions: &Vec<DNSQuestion>) -> Vec<u8>
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub enum QuestionParseError {
     ShortLength(usize),
-    QTypeParse(u8),
-    QClassParse(u8)
+    QTypeParse(u16),
+    QClassParse(u16)
 }
 
 pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32, Vec<DNSQuestion>), QuestionParseError>
@@ -123,7 +133,8 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
 
     let mut current_length: Option<u8> = None;
     let mut remaining_length: u8 = 0;
-    let mut current_qtype: Option<u8> = None;
+    let mut current_qtype: (Option<u8>, Option<u8>) = (None, None);
+    let mut current_qclass: (Option<u8>, Option<u8>) = (None, None);
     let mut trailers_reached = false;
 
     let mut byte_counter  = 0;
@@ -137,7 +148,7 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
                 current_query.clear();
             }
             Some(_) => {
-                if byte == 0 {
+                if byte == 0 && !trailers_reached {
                     trailers_reached = true;
                     continue
                 }
@@ -148,12 +159,19 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
                     remaining_length = byte;
                 }
                 else if trailers_reached { // trailer fields
-                    match current_qtype {
-                        None => {
-                            current_qtype = Some(byte);
+                    match (current_qtype, current_qclass) {
+                        ((None, _), (_, _)) => {
+                            current_qtype.0 = Some(byte);
+                        },
+                        ((_, None), (_, _)) => {
+                            current_qtype.1 = Some(byte);
+                        },
+                        ((_, _), (None, _)) => {
+                            current_qclass.0 = Some(byte);
                         }
-                        Some(qtype_b) => {
-                            match (qtype_b.try_into(), byte.try_into()) {
+                        ((Some(qtype_1), Some(qtype_2)), (Some(qclass_1), None)) => {
+                            match (two_byte_extraction(&[qtype_1, qtype_2], 0).try_into(),
+                                   two_byte_extraction(&[qclass_1, byte], 0).try_into()) {
                                 (Ok(qtype), Ok(qclass)) => {
                                     questions.push(DNSQuestion {
                                         qname: decode(String::from_utf8(current_query.clone()).unwrap().as_str()).unwrap().to_string(),
@@ -168,7 +186,8 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
                                     current_length = None;
                                     remaining_length = byte;
                                     current_query.clear();
-                                    current_qtype = None;
+                                    current_qtype = (None, None);
+                                    current_qclass = (None, None);
                                     trailers_reached = false;
                                 }
                                 (Err(qtype_e), _) => {
@@ -179,6 +198,7 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
                                 }
                             }
                         }
+                        _ => {}
                     }
                 }
                 else {
