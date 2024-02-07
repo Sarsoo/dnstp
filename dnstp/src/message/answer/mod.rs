@@ -4,6 +4,10 @@ pub use raw_rdata::RawRData;
 mod a_rdata;
 pub use a_rdata::ARdata;
 
+mod aaaa_rdata;
+pub use aaaa_rdata::AAAARdata;
+
+
 #[cfg(test)]
 mod tests;
 
@@ -17,7 +21,7 @@ pub trait RData: Debug {
 }
 
 #[derive(Debug)]
-pub struct DNSAnswer {
+pub struct ResourceRecord {
     pub name_offset: u16,
     pub answer_type: QType,
     pub class: QClass,
@@ -26,7 +30,7 @@ pub struct DNSAnswer {
     pub r_data: Box<dyn RData>
 }
 
-impl DNSAnswer {
+impl ResourceRecord {
 
     pub fn to_bytes(&self) -> Vec<u8>
     {
@@ -56,9 +60,9 @@ impl DNSAnswer {
         return ret
     }
 
-    pub fn from_query(query: &DNSQuestion, name_offset: u16, data: Box<dyn RData>, ttl: Option<u32>) -> DNSAnswer
+    pub fn from_query(query: &DNSQuestion, name_offset: u16, data: Box<dyn RData>, ttl: Option<u32>) -> ResourceRecord
     {
-        DNSAnswer {
+        ResourceRecord {
             name_offset,
             answer_type: query.qtype,
             class: query.qclass,
@@ -69,7 +73,7 @@ impl DNSAnswer {
     }
 }
 
-pub fn answers_to_bytes(answers: &Vec<DNSAnswer>) -> Vec<u8>
+pub fn records_to_bytes(answers: &Vec<ResourceRecord>) -> Vec<u8>
 {
     let mut ret = Vec::with_capacity(20);
 
@@ -82,13 +86,13 @@ pub fn answers_to_bytes(answers: &Vec<DNSAnswer>) -> Vec<u8>
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
-pub enum AnswerParseError {
+pub enum RecordParseError {
     ShortLength(usize),
     QTypeParse(u8),
     QClassParse(u8)
 }
 
-pub fn answers_from_bytes(bytes: Vec<u8>, total_answers: u16) -> Result<(i32, Vec<DNSAnswer>), AnswerParseError>
+pub fn answers_from_bytes(bytes: Vec<u8>, total_answers: u16) -> Result<(i32, Vec<ResourceRecord>), RecordParseError>
 {
     Ok((0, vec![]))
 }

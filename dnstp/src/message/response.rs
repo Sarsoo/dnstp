@@ -1,11 +1,13 @@
 use std::net::{Ipv4Addr, SocketAddr};
-use crate::message::{Direction, DNSHeader, DNSRequest, ResponseCode, answers_to_bytes, ARdata, DNSAnswer, DNSQuestion, questions_to_bytes};
+use crate::message::{Direction, DNSHeader, DNSRequest, ResponseCode, records_to_bytes, ARdata, ResourceRecord, DNSQuestion, questions_to_bytes};
 
 #[derive(Debug)]
 pub struct DNSResponse {
     pub header: DNSHeader,
     pub questions: Vec<DNSQuestion>,
-    pub answers: Vec<DNSAnswer>,
+    pub answers: Vec<ResourceRecord>,
+    pub authorities: Vec<ResourceRecord>,
+    pub additionals: Vec<ResourceRecord>,
     pub peer: SocketAddr
 }
 
@@ -15,10 +17,14 @@ impl DNSResponse {
     {
         let mut header_bytes = self.header.to_bytes().to_vec();
         let mut body_bytes = questions_to_bytes(&self.questions);
-        let mut answer_bytes = answers_to_bytes(&self.answers);
+        let mut answer_bytes = records_to_bytes(&self.answers);
+        let mut authority_bytes = records_to_bytes(&self.authorities);
+        let mut additional_bytes = records_to_bytes(&self.additionals);
 
         header_bytes.append(&mut body_bytes);
         header_bytes.append(&mut answer_bytes);
+        header_bytes.append(&mut authority_bytes);
+        header_bytes.append(&mut additional_bytes);
 
         return header_bytes
     }
@@ -29,16 +35,18 @@ impl DNSResponse {
             header: request.header.clone(),
             questions: request.questions.clone(),
             answers: vec![],
+            authorities: vec![],
+            additionals: vec![],
             peer: request.peer
         };
 
         response.answers = request.questions
             .iter()
             .map(|x|
-                DNSAnswer::from_query(x,
-                                      12,
-                                      Box::from(ARdata::from(ip(x))),
-                                      None))
+                ResourceRecord::from_query(x,
+                                           12,
+                                           Box::from(ARdata::from(ip(x))),
+                                           None))
             .collect();
 
         response.header.direction = Direction::Response;

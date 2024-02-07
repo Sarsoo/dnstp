@@ -6,7 +6,8 @@ use clap::Parser;
 use log::{info, LevelFilter};
 use rand::RngCore;
 use simplelog::*;
-use dnstplib::message::{DNSQuestion, DNSRequest, DNSHeader, QClass, QType, Direction, Opcode, ResponseCode};
+
+use dnstplib::message::DNSRequest;
 use dnstplib::net::{DNSSocket, NetworkMessage};
 use dnstplib::processor::ResponseProcesor;
 

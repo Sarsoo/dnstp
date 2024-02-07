@@ -5,7 +5,7 @@ use super::*;
 #[test]
 #[ignore]
 fn one_answer_back_and_forth() {
-    let q = DNSAnswer {
+    let q = ResourceRecord {
         // name_offset: "google.com".to_string(),
         name_offset: 12,
         answer_type: QType::A,
