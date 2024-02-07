@@ -1,7 +1,5 @@
-use std::net::SocketAddr;
-use crate::message::answer::{answers_to_bytes, DNSAnswer};
-use crate::message::header::DNSHeader;
-use crate::message::question::{DNSQuestion, questions_to_bytes};
+use std::net::{Ipv4Addr, SocketAddr};
+use crate::message::{Direction, DNSHeader, DNSRequest, ResponseCode, answers_to_bytes, ARdata, DNSAnswer, DNSQuestion, questions_to_bytes};
 
 #[derive(Debug)]
 pub struct DNSResponse {
@@ -23,5 +21,36 @@ impl DNSResponse {
         header_bytes.append(&mut answer_bytes);
 
         return header_bytes
+    }
+
+    pub fn a_from_request(request: &DNSRequest, ip: impl Fn(&DNSQuestion) -> Ipv4Addr) -> DNSResponse
+    {
+        let mut response = DNSResponse{
+            header: request.header.clone(),
+            questions: request.questions.clone(),
+            answers: vec![],
+            peer: request.peer
+        };
+
+        response.answers = request.questions
+            .iter()
+            .map(|x|
+                DNSAnswer::from_query(x,
+                                      12,
+                                      Box::from(ARdata::from(ip(x))),
+                                      None))
+            .collect();
+
+        response.header.direction = Direction::Response;
+        response.header.response = ResponseCode::NoError;
+        response.header.answer_record_count = response.answers.len() as u16;
+        response.header.authority_record_count = 0;
+        response.header.additional_record_count = 0;
+
+        if response.header.recursion_desired {
+            response.header.recursion_available = true;
+        }
+
+        response
     }
 }

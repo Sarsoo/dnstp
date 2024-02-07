@@ -1,8 +1,6 @@
 use crate::byte;
-use crate::message::header::{Direction, DNSHeader, Opcode, ResponseCode};
-use crate::message::question::{QuestionParseError, questions_from_bytes};
-use crate::message::request::DNSRequest;
-use crate::net::raw_request::NetworkMessage;
+use crate::message::{DNSRequest, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes};
+use crate::net::NetworkMessage;
 use crate::request_parser::RequestParseError::{HeaderParse, QuesionsParse};
 
 pub const ID_START: usize = 0;

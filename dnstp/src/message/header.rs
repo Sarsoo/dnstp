@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 use crate::byte::apply_split_bytes;
-use crate::message::header::Direction::Response;
+
+use crate::message::Direction::Response;
 
 /// Size in bytes for a DNS message
 pub const HEADER_SIZE: usize = 12;

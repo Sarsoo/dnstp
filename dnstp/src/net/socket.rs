@@ -4,8 +4,9 @@ use std::thread::{JoinHandle};
 use log::{debug, error, info};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use crate::message::header::HEADER_SIZE;
-use crate::net::raw_request::{NetworkMessage, NetworkMessagePtr};
+
+use crate::message::HEADER_SIZE;
+use crate::net::{NetworkMessage, NetworkMessagePtr};
 
 pub struct DNSSocket {
     addresses: Vec<SocketAddr>,
