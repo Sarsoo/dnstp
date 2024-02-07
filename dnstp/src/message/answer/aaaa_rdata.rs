@@ -16,7 +16,7 @@ impl Debug for AAAARdata {
 
 impl RData for AAAARdata {
     fn to_bytes(&self) -> Vec<u8> {
-        return self.rdata.octets().to_vec();
+        self.rdata.octets().to_vec()
     }
 }
 

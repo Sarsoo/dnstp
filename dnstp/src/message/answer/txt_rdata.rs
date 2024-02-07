@@ -1,28 +1,28 @@
 use std::fmt::{Debug, Formatter};
 use crate::message::answer::RData;
 
-pub struct RawRData {
-    pub rdata: Vec<u8>
+pub struct TXTRdata {
+    pub rdata: String
 }
 
-impl Debug for RawRData {
+impl Debug for TXTRdata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RawRData")
+        f.debug_struct("TXT")
             .field("data", &self.rdata)
             .finish()
     }
 }
 
-impl RData for RawRData {
+impl RData for TXTRdata {
     fn to_bytes(&self) -> Vec<u8> {
-        self.rdata.clone()
+        self.rdata.into_bytes()
     }
 }
 
-impl RawRData {
-    pub fn from(rdata: Vec<u8>) -> RawRData
+impl TXTRdata {
+    pub fn from(rdata: String) -> TXTRdata
     {
-        RawRData {
+        TXTRdata {
             rdata
         }
     }

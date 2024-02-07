@@ -7,6 +7,9 @@ pub use a_rdata::ARdata;
 mod aaaa_rdata;
 pub use aaaa_rdata::AAAARdata;
 
+mod txt_rdata;
+pub use txt_rdata::TXTRdata;
+
 
 #[cfg(test)]
 mod tests;

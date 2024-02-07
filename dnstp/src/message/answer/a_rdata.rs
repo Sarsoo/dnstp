@@ -16,7 +16,7 @@ impl Debug for ARdata {
 
 impl RData for ARdata {
     fn to_bytes(&self) -> Vec<u8> {
-        return self.rdata.octets().to_vec();
+        self.rdata.octets().to_vec()
     }
 }
 
