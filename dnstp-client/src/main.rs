@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
@@ -17,13 +17,24 @@ struct Args {
     /// Addresses to send requests
     #[arg(short, long)]
     address: String,
+    /// Base domain to operate on
+    #[arg(long)]
+    base_domain: String,
+    /// Sub-domain to handle key handling when requested
+    #[arg(long, default_value = "static")]
+    key_endpoint: String
 }
 
 fn main() {
     CombinedLogger::init(
         vec![
             TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Info, Config::default(), File::create("dnstp.log").unwrap()),
+            WriteLogger::new(LevelFilter::Info, Config::default(), OpenOptions::new()
+                .read(true)
+                .write(true)
+                .append(true)
+                .create(true)
+                .open("dnstp.log").unwrap()),
         ]
     ).unwrap();
 
@@ -42,12 +53,14 @@ fn main() {
 
     socket.run_rx(processor.get_message_channel().expect("couldn't get message processing channel"));
 
+    let domain = vec![args.key_endpoint, args.base_domain].join(".");
+
     let mut rng = rand::thread_rng();
     loop {
 
         info!("sending...");
 
-        let message = DNSRequest::from_hostname(address, rng.next_u32() as u16, "duck.com".to_string());
+        let message = DNSRequest::from_hostname(address, rng.next_u32() as u16, domain.clone());
 
         let bytes = message.to_bytes();
 

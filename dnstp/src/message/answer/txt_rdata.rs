@@ -15,7 +15,7 @@ impl Debug for TXTRdata {
 
 impl RData for TXTRdata {
     fn to_bytes(&self) -> Vec<u8> {
-        self.rdata.into_bytes()
+        self.rdata.clone().into_bytes()
     }
 }
 

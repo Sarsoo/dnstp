@@ -5,8 +5,9 @@ use std::{thread};
 
 use log::info;
 use simplelog::*;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::net::SocketAddr;
+use dnstplib::DomainConfig;
 
 use dnstplib::net::DNSSocket;
 use dnstplib::processor::RequestProcesor;
@@ -18,13 +19,24 @@ struct Args {
     /// Addresses to bind server to
     #[arg(short, long)]
     address: Vec<String>,
+    /// Base domain to operate on
+    #[arg(long)]
+    base_domain: String,
+    /// Sub-domain to handle key handling when requested
+    #[arg(long, default_value = "static")]
+    key_endpoint: String
 }
 
 fn main() {
     CombinedLogger::init(
         vec![
             TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Info, Config::default(), File::create("dnstp.log").unwrap()),
+            WriteLogger::new(LevelFilter::Info, Config::default(), OpenOptions::new()
+                .read(true)
+                .write(true)
+                .append(true)
+                .create(true)
+                .open("dnstp.log").unwrap()),
         ]
     ).unwrap();
 
@@ -47,7 +59,10 @@ fn main() {
     socket.bind();
     socket.run_tx();
 
-    let mut processor = RequestProcesor::new();
+    let mut processor = RequestProcesor::new(DomainConfig {
+        base_domain: args.base_domain,
+        key_endpoint: args.key_endpoint
+    });
     processor.run(socket.get_tx_message_channel().expect("couldn't get message transmitting channel"));
 
     socket.run_rx(processor.get_message_channel().expect("couldn't get message processing channel"));
