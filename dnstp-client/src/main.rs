@@ -7,7 +7,7 @@ use log::{info, LevelFilter};
 use rand::RngCore;
 use simplelog::*;
 
-use dnstplib::message::DNSRequest;
+use dnstplib::message::DNSMessage;
 use dnstplib::net::{DNSSocket, NetworkMessage};
 use dnstplib::processor::ResponseProcesor;
 
@@ -60,7 +60,7 @@ fn main() {
 
         info!("sending...");
 
-        let message = DNSRequest::from_hostname(address, rng.next_u32() as u16, domain.clone());
+        let message = DNSMessage::from_hostname(address, rng.next_u32() as u16, domain.clone());
 
         let bytes = message.to_bytes();
 

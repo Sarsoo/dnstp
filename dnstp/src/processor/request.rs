@@ -5,9 +5,9 @@ use std::thread;
 use log::{error, info};
 use crate::config::DomainConfig;
 
-use crate::message::{QuestionParseError, DNSResponse, RecordParseError};
+use crate::message::{DNSMessage, QuestionParseError, RecordParseError};
 use crate::net::{NetworkMessage, NetworkMessagePtr};
-use crate::request_parser::{HeaderParseError, parse_request, RequestParseError};
+use crate::message_parser::{HeaderParseError, parse_message, RequestParseError};
 
 pub struct RequestProcesor {
     message_channel: Option<Sender<NetworkMessagePtr>>,
@@ -37,13 +37,13 @@ impl RequestProcesor {
             {
                 let peer = m.peer.clone();
 
-                match parse_request(*m) {
+                match parse_message(*m) {
                     Ok(r) => {
                         info!("received dns message: {:?}", r);
 
                         if r.questions.iter().any(|q| q.qname.ends_with(&base_domain_equality))
                         {
-                            let mut response = DNSResponse::a_from_request(&r, |q| Ipv4Addr::from([127, 0, 0, 1]));
+                            let mut response = DNSMessage::a_from_request(&r, |q| Ipv4Addr::from([127, 0, 0, 1]));
 
                             sending_channel.send(Box::from(
                                 NetworkMessage {
@@ -53,7 +53,7 @@ impl RequestProcesor {
                             ));
                         }
                         else {
-                            let mut response = DNSResponse::a_from_request(&r, |q| Ipv4Addr::from([127, 0, 0, 1]));
+                            let mut response = DNSMessage::a_from_request(&r, |q| Ipv4Addr::from([127, 0, 0, 1]));
 
                             sending_channel.send(Box::from(
                                 NetworkMessage {

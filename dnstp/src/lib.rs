@@ -1,4 +1,4 @@
-pub mod request_parser;
+pub mod message_parser;
 
 mod byte;
 pub mod processor;

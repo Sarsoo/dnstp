@@ -1,7 +1,7 @@
 use crate::byte;
-use crate::message::{DNSRequest, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError, ResourceRecord};
+use crate::message::{DNSMessage, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError, ResourceRecord};
 use crate::net::NetworkMessage;
-use crate::request_parser::RequestParseError::{HeaderParse, QuesionsParse};
+use crate::message_parser::RequestParseError::{HeaderParse, QuesionsParse};
 
 pub const ID_START: usize = 0;
 pub const FLAGS_START: usize = 2;
@@ -82,7 +82,7 @@ pub enum RequestParseError {
     RecordCount(u16, usize),
 }
 
-pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseError>
+pub fn parse_message(msg: NetworkMessage) -> Result<DNSMessage, RequestParseError>
 {
     let header = parse_header(msg.buffer[0..12].try_into().unwrap());
 
@@ -108,7 +108,7 @@ pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseErro
                                     let answer_records = answers.drain(0 .. (header.answer_record_count as usize)).collect();
                                     let authority_records = answers.drain(0 .. (header.authority_record_count as usize)).collect();
 
-                                    return Ok(DNSRequest {
+                                    return Ok(DNSMessage {
                                         header,
                                         questions,
                                         peer: msg.peer,
@@ -122,7 +122,7 @@ pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseErro
                         }
                     }
                     else {
-                        return Ok(DNSRequest {
+                        return Ok(DNSMessage {
                             header,
                             questions,
                             peer: msg.peer,

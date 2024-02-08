@@ -4,10 +4,10 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use log::{error, info};
 use std::str;
-use crate::message::{DNSResponse, QuestionParseError, RecordParseError};
+use crate::message::{QuestionParseError, RecordParseError};
 use crate::net::NetworkMessage;
 use crate::net::raw_request::NetworkMessagePtr;
-use crate::request_parser::{HeaderParseError, parse_request, RequestParseError};
+use crate::message_parser::{HeaderParseError, parse_message, RequestParseError};
 
 pub struct ResponseProcesor {
     message_channel: Option<Sender<NetworkMessagePtr>>
@@ -31,7 +31,7 @@ impl ResponseProcesor {
             {
                 let peer = m.peer.clone();
 
-                match parse_request(*m) {
+                match parse_message(*m) {
                     Ok(r) => {
                         info!("received dns message: {:?}", r);
                     }

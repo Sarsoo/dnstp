@@ -102,29 +102,29 @@ impl DNSHeader {
     {
         let mut header_bytes: [u8; 12] = [0; 12];
 
-        apply_split_bytes(&mut header_bytes, self.id, crate::request_parser::ID_START);
+        apply_split_bytes(&mut header_bytes, self.id, crate::message_parser::ID_START);
 
         let mut flags: u16 = 0;
 
         if self.direction == Response {
-            flags |= 0b1 << crate::request_parser::DIRECTION_SHIFT;
+            flags |= 0b1 << crate::message_parser::DIRECTION_SHIFT;
         }
 
-        flags |= (self.opcode as u16) << crate::request_parser::OPCODE_SHIFT;
+        flags |= (self.opcode as u16) << crate::message_parser::OPCODE_SHIFT;
 
-        flags |= (self.authoritative as u16) << crate::request_parser::AUTHORITATIVE_SHIFT;
-        flags |= (self.truncation as u16) << crate::request_parser::TRUNCATION_SHIFT;
-        flags |= (self.recursion_desired as u16) << crate::request_parser::RECURSION_DESIRED_SHIFT;
-        flags |= (self.recursion_available as u16) << crate::request_parser::RECURSION_AVAILABLE_SHIFT;
+        flags |= (self.authoritative as u16) << crate::message_parser::AUTHORITATIVE_SHIFT;
+        flags |= (self.truncation as u16) << crate::message_parser::TRUNCATION_SHIFT;
+        flags |= (self.recursion_desired as u16) << crate::message_parser::RECURSION_DESIRED_SHIFT;
+        flags |= (self.recursion_available as u16) << crate::message_parser::RECURSION_AVAILABLE_SHIFT;
 
         flags |= self.response as u16;
 
-        apply_split_bytes(&mut header_bytes, flags, crate::request_parser::FLAGS_START);
+        apply_split_bytes(&mut header_bytes, flags, crate::message_parser::FLAGS_START);
 
-        apply_split_bytes(&mut header_bytes, self.question_count, crate::request_parser::QUESTION_COUNT_START);
-        apply_split_bytes(&mut header_bytes, self.answer_record_count, crate::request_parser::ANSWER_RECORD_COUNT_START);
-        apply_split_bytes(&mut header_bytes, self.authority_record_count, crate::request_parser::AUTHORITY_RECORD_COUNT_START);
-        apply_split_bytes(&mut header_bytes, self.additional_record_count, crate::request_parser::ADDITIONAL_RECORD_COUNT_START);
+        apply_split_bytes(&mut header_bytes, self.question_count, crate::message_parser::QUESTION_COUNT_START);
+        apply_split_bytes(&mut header_bytes, self.answer_record_count, crate::message_parser::ANSWER_RECORD_COUNT_START);
+        apply_split_bytes(&mut header_bytes, self.authority_record_count, crate::message_parser::AUTHORITY_RECORD_COUNT_START);
+        apply_split_bytes(&mut header_bytes, self.additional_record_count, crate::message_parser::ADDITIONAL_RECORD_COUNT_START);
 
         header_bytes
     }
