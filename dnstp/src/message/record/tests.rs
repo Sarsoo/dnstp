@@ -1,4 +1,4 @@
-use crate::message::question::{DNSQuestion, QClass, QType, questions_from_bytes};
+use crate::message::question::{QClass, QType};
 
 use super::*;
 

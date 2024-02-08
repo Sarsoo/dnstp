@@ -1,11 +1,8 @@
-use std::net::Ipv4Addr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use log::{error, info};
-use std::str;
 use crate::message::{QuestionParseError, RecordParseError};
-use crate::net::NetworkMessage;
 use crate::net::raw_request::NetworkMessagePtr;
 use crate::message_parser::{HeaderParseError, parse_message, RequestParseError};
 

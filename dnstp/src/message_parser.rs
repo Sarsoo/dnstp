@@ -1,5 +1,5 @@
 use crate::byte;
-use crate::message::{DNSMessage, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError, ResourceRecord};
+use crate::message::{DNSMessage, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError};
 use crate::net::NetworkMessage;
 use crate::message_parser::RequestParseError::{HeaderParse, QuesionsParse};
 
@@ -96,7 +96,9 @@ pub fn parse_message(msg: NetworkMessage) -> Result<DNSMessage, RequestParseErro
                 Ok((questions, remaining)) => {
                     if remaining.len() > 0 {
 
-                        let total_records = header.answer_record_count + header.authority_record_count + header.additional_record_count;
+                        // can't handle EDNS records at the moment
+                        // let total_records = header.answer_record_count + header.authority_record_count + header.additional_record_count;
+                        let total_records = header.answer_record_count + header.authority_record_count;
 
                         match records_from_bytes(remaining, total_records){
                             Ok((mut answers, _)) => {

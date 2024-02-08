@@ -1,12 +1,12 @@
 use std::fmt::{Debug, Formatter};
-use std::net::{Ipv4Addr, Ipv6Addr};
-use crate::message::answer::RData;
+use std::net::Ipv4Addr;
+use crate::message::record::RData;
 
-pub struct AAAARdata {
-    pub rdata: Ipv6Addr
+pub struct ARdata {
+    pub rdata: Ipv4Addr
 }
 
-impl Debug for AAAARdata {
+impl Debug for ARdata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IP")
             .field("data", &self.rdata)
@@ -14,16 +14,16 @@ impl Debug for AAAARdata {
     }
 }
 
-impl RData for AAAARdata {
+impl RData for ARdata {
     fn to_bytes(&self) -> Vec<u8> {
         self.rdata.octets().to_vec()
     }
 }
 
-impl AAAARdata {
-    pub fn from(rdata: Ipv6Addr) -> AAAARdata
+impl ARdata {
+    pub fn from(rdata: Ipv4Addr) -> ARdata
     {
-        AAAARdata {
+        ARdata {
             rdata
         }
     }

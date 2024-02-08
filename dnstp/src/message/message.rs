@@ -1,5 +1,5 @@
 use std::net::{Ipv4Addr, SocketAddr};
-use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, Opcode, ResponseCode, QType, QClass, ResourceRecord, records_to_bytes, ARdata};
+use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, ResponseCode, QType, QClass, ResourceRecord, records_to_bytes, ARdata};
 
 #[derive(Debug)]
 pub struct DNSMessage {

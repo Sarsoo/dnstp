@@ -2,7 +2,7 @@
 mod tests;
 
 use urlencoding::decode;
-use crate::byte::{push_split_bytes, two_byte_combine, two_byte_extraction, two_byte_split};
+use crate::byte::{push_split_bytes, two_byte_combine};
 use crate::string::encode_domain_name;
 
 #[repr(u16)]
@@ -21,6 +21,7 @@ pub enum QType {
     RP = 17,
     AAAA = 28,
     SRV = 33,
+    OPT = 41,
     ANY = 255,
 }
 

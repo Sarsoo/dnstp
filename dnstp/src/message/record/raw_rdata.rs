@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use crate::message::answer::RData;
+use crate::message::record::RData;
 
 pub struct RawRData {
     pub rdata: Vec<u8>
