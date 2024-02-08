@@ -5,7 +5,7 @@ use std::thread;
 use log::{error, info};
 use crate::config::DomainConfig;
 
-use crate::message::{QuestionParseError, DNSResponse};
+use crate::message::{QuestionParseError, DNSResponse, RecordParseError};
 use crate::net::{NetworkMessage, NetworkMessagePtr};
 use crate::request_parser::{HeaderParseError, parse_request, RequestParseError};
 
@@ -43,7 +43,14 @@ impl RequestProcesor {
 
                         if r.questions.iter().any(|q| q.qname.ends_with(&base_domain_equality))
                         {
+                            let mut response = DNSResponse::a_from_request(&r, |q| Ipv4Addr::from([127, 0, 0, 1]));
 
+                            sending_channel.send(Box::from(
+                                NetworkMessage {
+                                    buffer: Box::from(response.to_bytes()),
+                                    peer: response.peer
+                                }
+                            ));
                         }
                         else {
                             let mut response = DNSResponse::a_from_request(&r, |q| Ipv4Addr::from([127, 0, 0, 1]));
@@ -80,6 +87,22 @@ impl RequestProcesor {
                                         error!("[{}] failed to parse questions of received message, qclass error: [{}]", peer, ce);
                                     }
                                 }
+                            }
+                            RequestParseError::RecordParse(rp) => {
+                                match rp {
+                                    RecordParseError::ShortLength(sl) => {
+                                        error!("[{}] failed to parse records of received message, too short: [{} bytes]", peer, sl);
+                                    }
+                                    RecordParseError::QTypeParse(te) => {
+                                        error!("[{}] failed to parse records of received message, qtype error: [{}]", peer, te);
+                                    }
+                                    RecordParseError::QClassParse(ce) => {
+                                        error!("[{}] failed to parse records of received message, qclass error: [{}]", peer, ce);
+                                    }
+                                }
+                            }
+                            RequestParseError::RecordCount(expected, actual) => {
+                                error!("[{}] failed to parse records of received message, record count mismatch: [Expected:{}] [Actual:{}]", peer, expected, actual);
                             }
                         }
                     }

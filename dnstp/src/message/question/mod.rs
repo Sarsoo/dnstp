@@ -2,7 +2,7 @@
 mod tests;
 
 use urlencoding::decode;
-use crate::byte::{two_byte_extraction, two_byte_split};
+use crate::byte::{push_split_bytes, two_byte_combine, two_byte_extraction, two_byte_split};
 use crate::string::encode_domain_name;
 
 #[repr(u16)]
@@ -20,7 +20,8 @@ pub enum QType {
     TXT = 16,
     RP = 17,
     AAAA = 28,
-    SRV = 33
+    SRV = 33,
+    ANY = 255,
 }
 
 impl TryFrom<u16> for QType {
@@ -41,6 +42,7 @@ impl TryFrom<u16> for QType {
             x if x == QType::RP as u16 => Ok(QType::RP),
             x if x == QType::AAAA as u16 => Ok(QType::AAAA),
             x if x == QType::SRV as u16 => Ok(QType::SRV),
+            x if x == QType::ANY as u16 => Ok(QType::ANY),
             _ => Err(v),
         }
     }
@@ -88,15 +90,8 @@ impl DNSQuestion {
     {
         let mut ret = encode_domain_name(&self.qname);
 
-        let (qtype_1, qtype_2) = two_byte_split(self.qtype as u16);
-
-        ret.push(qtype_1);
-        ret.push(qtype_2);
-
-        let (qclass_1, qclass_2) = two_byte_split(self.qclass as u16);
-
-        ret.push(qclass_1);
-        ret.push(qclass_2);
+        push_split_bytes(&mut ret, self.qtype as u16);
+        push_split_bytes(&mut ret, self.qclass as u16);
 
         ret
     }
@@ -121,7 +116,7 @@ pub enum QuestionParseError {
     QClassParse(u16)
 }
 
-pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32, Vec<DNSQuestion>), QuestionParseError>
+pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(Vec<DNSQuestion>, Vec<u8>), QuestionParseError>
 {
     if bytes.len() < 4
     {
@@ -129,6 +124,8 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
     }
 
     let mut questions: Vec<DNSQuestion> = Vec::with_capacity(total_questions as usize);
+    let mut remaining = vec![];
+
     let mut current_query: Vec<u8> = Vec::with_capacity(10);
 
     let mut current_length: Option<u8> = None;
@@ -137,10 +134,12 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
     let mut current_qclass: (Option<u8>, Option<u8>) = (None, None);
     let mut trailers_reached = false;
 
-    let mut byte_counter  = 0;
-
     for byte in bytes {
-        byte_counter += 1;
+        if questions.len() == total_questions as usize {
+            remaining.push(byte);
+            continue;
+        }
+
         match current_length {
             None => { // next question, init lengths
                 current_length = Some(byte);
@@ -170,18 +169,14 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
                             current_qclass.0 = Some(byte);
                         }
                         ((Some(qtype_1), Some(qtype_2)), (Some(qclass_1), None)) => {
-                            match (two_byte_extraction(&[qtype_1, qtype_2], 0).try_into(),
-                                   two_byte_extraction(&[qclass_1, byte], 0).try_into()) {
+                            match (two_byte_combine(qtype_1, qtype_2).try_into(),
+                                   two_byte_combine(qclass_1, byte).try_into()) {
                                 (Ok(qtype), Ok(qclass)) => {
                                     questions.push(DNSQuestion {
                                         qname: decode(String::from_utf8(current_query.clone()).unwrap().as_str()).unwrap().to_string(),
                                         qtype,
                                         qclass
                                     });
-
-                                    if questions.len() == total_questions as usize {
-                                        break
-                                    }
 
                                     current_length = None;
                                     remaining_length = byte;
@@ -209,5 +204,5 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(i32
         }
     }
 
-    Ok((byte_counter, questions))
+    Ok((questions, remaining))
 }

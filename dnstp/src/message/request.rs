@@ -1,11 +1,13 @@
 use std::net::SocketAddr;
-use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, Opcode, ResponseCode, QType, QClass};
+use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, Opcode, ResponseCode, QType, QClass, ResourceRecord};
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub struct DNSRequest {
     pub header: DNSHeader,
     pub questions: Vec<DNSQuestion>,
-    pub additional_records: Vec<DNSQuestion>,
+    pub answer_records: Vec<ResourceRecord>,
+    pub authority_records: Vec<ResourceRecord>,
+    pub additional_records: Vec<ResourceRecord>,
     pub peer: SocketAddr
 }
 
@@ -32,6 +34,8 @@ impl DNSRequest {
                     qclass: QClass::Internet
                 }
             ],
+            answer_records: vec![],
+            authority_records: vec![],
             additional_records: vec![],
             peer
         }
@@ -50,6 +54,8 @@ impl DNSRequest {
                         qtype: QType::A
                     })
                 .collect(),
+            answer_records: vec![],
+            authority_records: vec![],
             additional_records: vec![],
             peer
         }

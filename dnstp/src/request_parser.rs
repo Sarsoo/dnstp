@@ -1,5 +1,5 @@
 use crate::byte;
-use crate::message::{DNSRequest, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes};
+use crate::message::{DNSRequest, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError, ResourceRecord};
 use crate::net::NetworkMessage;
 use crate::request_parser::RequestParseError::{HeaderParse, QuesionsParse};
 
@@ -78,6 +78,8 @@ pub fn parse_header(header: &[u8; 12]) -> Result<DNSHeader, HeaderParseError>
 pub enum RequestParseError {
     HeaderParse(HeaderParseError),
     QuesionsParse(QuestionParseError),
+    RecordParse(RecordParseError),
+    RecordCount(u16, usize),
 }
 
 pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseError>
@@ -88,32 +90,52 @@ pub fn parse_request(msg: NetworkMessage) -> Result<DNSRequest, RequestParseErro
         Ok(header) => {
             let mut trimmed = msg.buffer.to_vec();
             trimmed.drain(0 .. 12);
-            let buffer_size = trimmed.len();
+
             match questions_from_bytes(trimmed, header.question_count)
             {
-                Ok((bytes_read, questions)) => {
+                Ok((questions, remaining)) => {
+                    if remaining.len() > 0 {
 
-                    if buffer_size > bytes_read as usize {
-                        Ok(DNSRequest {
-                            header,
-                            questions,
-                            peer: msg.peer,
-                            additional_records: vec![]
-                        })
+                        let total_records = header.answer_record_count + header.authority_record_count + header.additional_record_count;
+
+                        match records_from_bytes(remaining, total_records){
+                            Ok((mut answers, _)) => {
+
+                                if answers.len() != total_records as usize {
+                                    return Err(RequestParseError::RecordCount(total_records, answers.len()));
+                                }
+                                else {
+                                    let answer_records = answers.drain(0 .. (header.answer_record_count as usize)).collect();
+                                    let authority_records = answers.drain(0 .. (header.authority_record_count as usize)).collect();
+
+                                    return Ok(DNSRequest {
+                                        header,
+                                        questions,
+                                        peer: msg.peer,
+                                        answer_records,
+                                        authority_records,
+                                        additional_records: answers
+                                    });
+                                }
+                            }
+                            Err(e) => return Err(RequestParseError::RecordParse(e))
+                        }
                     }
                     else {
-                        Ok(DNSRequest {
+                        return Ok(DNSRequest {
                             header,
                             questions,
                             peer: msg.peer,
+                            answer_records: vec![],
+                            authority_records: vec![],
                             additional_records: vec![]
-                        })
+                        });
                     }
                 }
-                Err(e) => Err(QuesionsParse(e))
+                Err(e) => return Err(QuesionsParse(e))
             }
         },
-        Err(e) => Err(HeaderParse(e))
+        Err(e) => return Err(HeaderParse(e))
     }
 }
 
