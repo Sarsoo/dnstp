@@ -1,3 +1,5 @@
+//! Method for handling cryptography including ECDH shared secret derivation and symmetric key encryption
+
 #[cfg(test)]
 mod tests;
 

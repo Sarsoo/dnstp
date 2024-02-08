@@ -1,4 +1,4 @@
-//! Structures making up the DNS workflow including requests, responses and headers
+//! Structures making up the DNS workflow including messages and headers
 pub mod header;
 pub mod question;
 pub mod message;

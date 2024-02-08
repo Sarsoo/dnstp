@@ -1,3 +1,5 @@
+//! Functions for constructing internal DNS structures from network message bytes
+
 use crate::byte;
 use crate::message::{DNSMessage, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError};
 use crate::net::NetworkMessage;

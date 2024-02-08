@@ -1,3 +1,5 @@
+//! Utility functions for manipulating strings
+
 use urlencoding::encode;
 
 pub fn encode_domain_name(name: &String) -> Vec<u8>

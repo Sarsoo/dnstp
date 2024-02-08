@@ -1,4 +1,4 @@
-//! Utility functions for operating on bytes
+//! Utility functions for operating on bytes including splitting multi-byte integers into bytes and vice versa
 
 #[cfg(test)]
 mod tests;

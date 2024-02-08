@@ -1,3 +1,5 @@
+//! Network layer for binding and processing UDP traffic
+
 pub mod socket;
 pub mod raw_request;
 

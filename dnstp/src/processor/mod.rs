@@ -1,3 +1,4 @@
+//! Business-logic-like structures for processing parsed messages
 
 pub mod request;
 pub mod response;
