@@ -47,7 +47,7 @@ impl DNSSocket {
     {
         match UdpSocket::bind(&self.addresses[..]) {
             Ok(s) => {
-                self.socket = Option::from(Box::from(s));
+                self.socket = Option::from(Box::new(s));
             },
             Err(_) => {}
         };
@@ -56,7 +56,7 @@ impl DNSSocket {
     fn get_socket_clone(&mut self) -> Option<Box<UdpSocket>>
     {
         match &self.socket {
-            Some(s) => Option::from(Box::from(s.try_clone().unwrap())),
+            Some(s) => Option::from(Box::new(s.try_clone().unwrap())),
             None => None
         }
     }

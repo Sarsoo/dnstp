@@ -1,4 +1,7 @@
-use std::fs::{File, OpenOptions};
+//! # Client Side
+//!
+
+use std::fs::OpenOptions;
 use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
@@ -6,6 +9,7 @@ use clap::Parser;
 use log::{info, LevelFilter};
 use rand::RngCore;
 use simplelog::*;
+use dnstplib::DomainConfig;
 
 use dnstplib::message::DNSMessage;
 use dnstplib::net::{DNSSocket, NetworkMessage};
@@ -53,19 +57,24 @@ fn main() {
 
     socket.run_rx(processor.get_message_channel().expect("couldn't get message processing channel"));
 
-    let domain = vec![args.key_endpoint, args.base_domain].join(".");
+    let domain_config = DomainConfig {
+        base_domain: args.base_domain,
+        key_endpoint: args.key_endpoint
+    };
+
+    let domain = domain_config.get_fq_key_endpoint();
 
     let mut rng = rand::thread_rng();
     loop {
 
         info!("sending...");
 
-        let message = DNSMessage::from_hostname(address, rng.next_u32() as u16, domain.clone());
+        let message = DNSMessage::req_from_hostname(address, rng.next_u32() as u16, domain.clone());
 
         let bytes = message.to_bytes();
 
-        tx_channel.send(Box::from(NetworkMessage {
-            buffer: Box::from(bytes),
+        tx_channel.send(Box::new(NetworkMessage {
+            buffer: Box::new(bytes),
             peer: args.address.parse().unwrap()
         }));
 

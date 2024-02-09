@@ -3,7 +3,7 @@
 use crate::byte;
 use crate::message::{DNSMessage, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError};
 use crate::net::NetworkMessage;
-use crate::message_parser::RequestParseError::{HeaderParse, QuesionsParse};
+use crate::message_parser::MessageParseError::{HeaderParse, QuesionsParse};
 
 pub const ID_START: usize = 0;
 pub const FLAGS_START: usize = 2;
@@ -77,14 +77,14 @@ pub fn parse_header(header: &[u8; 12]) -> Result<DNSHeader, HeaderParseError>
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
-pub enum RequestParseError {
+pub enum MessageParseError {
     HeaderParse(HeaderParseError),
     QuesionsParse(QuestionParseError),
     RecordParse(RecordParseError),
     RecordCount(u16, usize),
 }
 
-pub fn parse_message(msg: NetworkMessage) -> Result<DNSMessage, RequestParseError>
+pub fn parse_message(msg: NetworkMessage) -> Result<DNSMessage, MessageParseError>
 {
     let header = parse_header(msg.buffer[0..12].try_into().unwrap());
 
@@ -106,7 +106,7 @@ pub fn parse_message(msg: NetworkMessage) -> Result<DNSMessage, RequestParseErro
                             Ok((mut answers, _)) => {
 
                                 if answers.len() != total_records as usize {
-                                    return Err(RequestParseError::RecordCount(total_records, answers.len()));
+                                    return Err(MessageParseError::RecordCount(total_records, answers.len()));
                                 }
                                 else {
                                     let answer_records = answers.drain(0 .. (header.answer_record_count as usize)).collect();
@@ -122,7 +122,7 @@ pub fn parse_message(msg: NetworkMessage) -> Result<DNSMessage, RequestParseErro
                                     });
                                 }
                             }
-                            Err(e) => return Err(RequestParseError::RecordParse(e))
+                            Err(e) => return Err(MessageParseError::RecordParse(e))
                         }
                     }
                     else {

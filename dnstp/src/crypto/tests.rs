@@ -33,3 +33,14 @@ fn arbitrary_string_back_and_forth() {
 
     assert_eq!(data, result);
 }
+
+#[test]
+fn public_key_trimming()
+{
+    let (_, public) = get_random_asym_pair();
+
+    let trimmed = trim_public_key(&public);
+    let fattened = fatten_public_key(&trimmed.to_string());
+
+    assert_eq!(public, fattened);
+}

@@ -8,8 +8,8 @@ pub struct AAAARdata {
 
 impl Debug for AAAARdata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("IP")
-            .field("data", &self.rdata)
+        f.debug_struct("AAAA")
+            .field("IP", &self.rdata)
             .finish()
     }
 }

@@ -8,8 +8,8 @@ pub struct ARdata {
 
 impl Debug for ARdata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("IP")
-            .field("data", &self.rdata)
+        f.debug_struct("A")
+            .field("IP", &self.rdata)
             .finish()
     }
 }

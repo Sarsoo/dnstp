@@ -128,7 +128,7 @@ pub fn records_from_bytes(bytes: Vec<u8>, total_answers: u16) -> Result<(Vec<Res
                             class: qclass_formed,
                             ttl: four_byte_combine(ttl.0.unwrap(), ttl.1.unwrap(), ttl.2.unwrap(), ttl.3.unwrap()),
                             rd_length: data_length_combined.unwrap(),
-                            r_data: Box::from(RawRData::from(data.clone()))
+                            r_data: Box::new(RawRData::from(data.clone()))
                         });
 
                         name_offset = (None, None);

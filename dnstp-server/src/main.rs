@@ -1,11 +1,14 @@
-//! DNS server component for processing requests and replying with DNS records
+//! # Server Side
+//! DNS server component for processing requests and replying with DNS records.
+//!
+//! The aim is to have clients exfil to this server and to allow pulling down data from the server.
 
 use clap::Parser;
 use std::{thread};
 
 use log::info;
 use simplelog::*;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::net::SocketAddr;
 use dnstplib::DomainConfig;
 

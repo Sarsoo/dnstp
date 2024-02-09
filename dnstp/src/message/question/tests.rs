@@ -1,5 +1,13 @@
 use super::*;
 
+macro_rules! assert_questions_eq {
+    ($left:expr, $right:expr) => {
+        assert_eq!($left.qname, $right.qname);
+        assert_eq!($left.qclass, $right.qclass);
+        assert_eq!($left.qtype, $right.qtype);
+    };
+}
+
 #[test]
 fn one_question_back_and_forth() {
     let q = DNSQuestion {
@@ -13,9 +21,7 @@ fn one_question_back_and_forth() {
 
     let (q_reconstructed, q_remaining) = questions_from_bytes(q_bytes, 1).unwrap();
 
-    assert_eq!(q.qname, q_reconstructed[0].qname);
-    assert_eq!(q.qclass, q_reconstructed[0].qclass);
-    assert_eq!(q.qtype, q_reconstructed[0].qtype);
+    assert_questions_eq!(q, q_reconstructed[0]);
 }
 
 #[test]
@@ -39,13 +45,8 @@ fn two_questions_back_and_forth() {
 
     let (q_reconstructed, q_remaining) = questions_from_bytes(q_bytes, 2).unwrap();
 
-    assert_eq!(q.qname, q_reconstructed[0].qname);
-    assert_eq!(q.qclass, q_reconstructed[0].qclass);
-    assert_eq!(q.qtype, q_reconstructed[0].qtype);
-
-    assert_eq!(q2.qname, q_reconstructed[1].qname);
-    assert_eq!(q2.qclass, q_reconstructed[1].qclass);
-    assert_eq!(q2.qtype, q_reconstructed[1].qtype);
+    assert_questions_eq!(q, q_reconstructed[0]);
+    assert_questions_eq!(q2, q_reconstructed[1]);
 }
 
 #[test]
@@ -77,15 +78,7 @@ fn three_questions_back_and_forth() {
 
     let (q_reconstructed, q_remaining) = questions_from_bytes(q_bytes, 3).unwrap();
 
-    assert_eq!(q.qname, q_reconstructed[0].qname);
-    assert_eq!(q.qclass, q_reconstructed[0].qclass);
-    assert_eq!(q.qtype, q_reconstructed[0].qtype);
-
-    assert_eq!(q2.qname, q_reconstructed[1].qname);
-    assert_eq!(q2.qclass, q_reconstructed[1].qclass);
-    assert_eq!(q2.qtype, q_reconstructed[1].qtype);
-
-    assert_eq!(q3.qname, q_reconstructed[2].qname);
-    assert_eq!(q3.qclass, q_reconstructed[2].qclass);
-    assert_eq!(q3.qtype, q_reconstructed[2].qtype);
+    assert_questions_eq!(q, q_reconstructed[0]);
+    assert_questions_eq!(q2, q_reconstructed[1]);
+    assert_questions_eq!(q3, q_reconstructed[2]);
 }
