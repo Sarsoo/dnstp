@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests;
 
+use std::fmt;
 use urlencoding::decode;
 use crate::byte::{push_split_bytes, two_byte_combine};
 use crate::string::encode_domain_name;
@@ -23,6 +24,28 @@ pub enum QType {
     SRV = 33,
     OPT = 41,
     ANY = 255,
+}
+
+impl fmt::Display for QType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            QType::A => write!(f, "A"),
+            QType::NS => write!(f, "NS"),
+            QType::CNAME => write!(f, "CNAME"),
+            QType::SOA => write!(f, "SOA"),
+            QType::WKS => write!(f, "WKS"),
+            QType::PTR => write!(f, "PTR"),
+            QType::HINFO => write!(f, "HINFO"),
+            QType::MINFO => write!(f, "MINFO"),
+            QType::MX => write!(f, "MX"),
+            QType::TXT => write!(f, "TXT"),
+            QType::RP => write!(f, "RP"),
+            QType::AAAA => write!(f, "AAAA"),
+            QType::SRV => write!(f, "SRV"),
+            QType::OPT => write!(f, "OPT"),
+            QType::ANY => write!(f, "ANY"),
+        }
+    }
 }
 
 impl TryFrom<u16> for QType {

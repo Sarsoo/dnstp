@@ -10,6 +10,8 @@ pub use aaaa_rdata::AAAARdata;
 mod txt_rdata;
 pub use txt_rdata::TXTRdata;
 
+mod cname_rdata;
+pub use cname_rdata::CnameRdata;
 
 #[cfg(test)]
 mod tests;

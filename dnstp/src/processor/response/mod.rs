@@ -1,10 +1,9 @@
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::{error, info};
-use crate::message::{QuestionParseError, RecordParseError};
+use log::info;
 use crate::net::raw_request::NetworkMessagePtr;
-use crate::message_parser::{HeaderParseError, parse_message, MessageParseError};
+use crate::message_parser::parse_message;
 use crate::processor::print_error;
 
 pub struct ResponseProcesor {
@@ -25,7 +24,7 @@ impl ResponseProcesor {
 
         thread::spawn(move || {
 
-            for mut m in rx
+            for m in rx
             {
                 let peer = m.peer.clone();
 

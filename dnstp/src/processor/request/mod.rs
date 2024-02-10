@@ -1,14 +1,16 @@
 use std::net::Ipv4Addr;
-use std::sync::mpsc;
+use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::info;
+use log::{error, info};
+use crate::clients::Clients;
 use crate::config::DomainConfig;
 
 use crate::message::DNSMessage;
 use crate::net::{NetworkMessage, NetworkMessagePtr};
 use crate::message_parser::parse_message;
 use crate::processor::print_error;
+use crate::processor::request::encryption::{decode_key_request, KeyDecodeError};
 
 pub mod encryption;
 
@@ -18,7 +20,9 @@ mod tests;
 pub struct RequestProcesor {
     message_channel: Option<Sender<NetworkMessagePtr>>,
     domain_config: DomainConfig,
-    encryption_endpoint: String
+    encryption_endpoint: String,
+
+    clients: Arc<Mutex<Clients>>
 }
 
 impl RequestProcesor {
@@ -28,7 +32,8 @@ impl RequestProcesor {
         RequestProcesor {
             message_channel: None,
             domain_config,
-            encryption_endpoint: fq_key_endpoint
+            encryption_endpoint: fq_key_endpoint,
+            clients: Arc::new(Mutex::new(Clients::new()))
         }
     }
 
@@ -39,13 +44,13 @@ impl RequestProcesor {
 
         let mut base_domain_equality = self.domain_config.base_domain.clone();
         base_domain_equality.insert_str(0, ".");
-        let base_domain_len = base_domain_equality.len() + 1;
 
         let fq_key_endpoint = self.encryption_endpoint.clone();
+        let clients = self.clients.clone();
 
         thread::spawn(move || {
 
-            // let fq_key_endpoint = fq_key_endpoint;
+            let clients = clients;
 
             for m in rx
             {
@@ -61,7 +66,36 @@ impl RequestProcesor {
                             {
                                 info!("[{}] received encryption key request", peer);
 
+                                match decode_key_request(r)
+                                {
+                                    Ok(context) => {
 
+                                        clients.lock().unwrap().add(context.client_public, context.new_client);
+
+                                        sending_channel.send(Box::new(
+                                            NetworkMessage {
+                                                buffer: Box::new(context.response.to_bytes()),
+                                                peer: context.response.peer
+                                            }
+                                        ));
+                                    }
+                                    Err(e) => {
+                                        match e {
+                                            KeyDecodeError::QuestionCount(qc) => {
+                                                error!("[{}] failed to parse public key, wrong question count [{}]", peer, qc);
+                                            }
+                                            KeyDecodeError::FirstQuestionNotA(qtype) => {
+                                                error!("[{}] failed to parse public key, first question wasn't an A request [{}]", peer, qtype);
+                                            }
+                                            KeyDecodeError::SecondQuestionNotA(qtype) => {
+                                                error!("[{}] failed to parse public key, second question wasn't an A request [{}]", peer, qtype);
+                                            }
+                                            KeyDecodeError::SharedSecretDerivation => {
+                                                error!("[{}] failed to parse public key, failed to derived shared secret", peer);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             else
                             {

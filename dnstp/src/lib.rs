@@ -7,8 +7,9 @@ mod byte;
 pub mod processor;
 pub mod message;
 pub mod net;
-mod string;
+pub mod string;
 pub mod config;
 pub mod crypto;
+mod clients;
 
 pub use config::DomainConfig;

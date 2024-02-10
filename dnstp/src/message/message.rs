@@ -75,18 +75,18 @@ impl DNSMessage {
         }
     }
 
-    pub fn a_resp_from_request(request: &DNSMessage, ip: impl Fn(&DNSQuestion) -> Ipv4Addr) -> DNSMessage
+    pub fn a_resp_from_request(&self, ip: impl Fn(&DNSQuestion) -> Ipv4Addr) -> DNSMessage
     {
         let mut response = DNSMessage{
-            header: request.header.clone(),
-            questions: request.questions.clone(),
+            header: self.header.clone(),
+            questions: self.questions.clone(),
             answer_records: vec![],
             authority_records: vec![],
             additional_records: vec![],
-            peer: request.peer
+            peer: self.peer
         };
 
-        response.answer_records = request.questions
+        response.answer_records = self.questions
             .iter()
             .map(|x|
                 ResourceRecord::from_query(x,
@@ -98,6 +98,30 @@ impl DNSMessage {
         response.header.direction = Direction::Response;
         response.header.response = ResponseCode::NoError;
         response.header.answer_record_count = response.answer_records.len() as u16;
+        response.header.authority_record_count = 0;
+        response.header.additional_record_count = 0;
+
+        if response.header.recursion_desired {
+            response.header.recursion_available = true;
+        }
+
+        response
+    }
+
+    pub fn empty_resp_from_request(&self) -> DNSMessage
+    {
+        let mut response = DNSMessage{
+            header: self.header.clone(),
+            questions: self.questions.clone(),
+            answer_records: vec![],
+            authority_records: vec![],
+            additional_records: vec![],
+            peer: self.peer
+        };
+
+        response.header.direction = Direction::Response;
+        response.header.response = ResponseCode::NoError;
+        response.header.answer_record_count = 0;
         response.header.authority_record_count = 0;
         response.header.additional_record_count = 0;
 

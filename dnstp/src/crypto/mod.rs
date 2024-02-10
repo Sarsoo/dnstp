@@ -18,7 +18,7 @@
 mod tests;
 
 use std::str::FromStr;
-use p256::{EncodedPoint, PublicKey, ecdh::EphemeralSecret, NistP256};
+use p256::{PublicKey, ecdh::EphemeralSecret, NistP256};
 use p256::elliptic_curve::ecdh::SharedSecret;
 use aes_gcm_siv::{aead::{Aead, KeyInit}, AeadCore, Aes256GcmSiv, Nonce};
 

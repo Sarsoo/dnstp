@@ -21,3 +21,25 @@ pub fn encode_domain_name(name: &String) -> Vec<u8>
 
     ret
 }
+
+pub fn strip_base_domain_from_key(public_key: &String) -> (String, String)
+{
+    let periods: Vec<_> = public_key.rmatch_indices(".").collect();
+
+    if periods.len() >= 2 {
+        (public_key[0 .. periods[1].0].to_string(),
+         public_key[periods[1].0 .. ].to_string())
+    }
+    else if periods.len() == 1 {
+        (public_key[0 .. periods[0].0].to_string(),
+         public_key[periods[0].0 .. ].to_string())
+    }
+    else {
+        (public_key.to_string(), String::new())
+    }
+}
+
+pub fn append_base_domain_to_key(trimmed_key: String, base_domain: &String) -> String
+{
+    vec![trimmed_key, base_domain.to_string()].join(".")
+}
