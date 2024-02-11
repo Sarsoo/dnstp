@@ -1,5 +1,6 @@
 use std::net::{Ipv4Addr, SocketAddr};
-use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, ResponseCode, QType, QClass, ResourceRecord, records_to_bytes, ARdata};
+use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, ResponseCode, QType, QClass, ResourceRecord, records_to_bytes, ARdata, TXTRdata, RData};
+use crate::RequestError;
 
 /// A DNS message which can be used as either a request or response based on its direction and composition
 #[derive(Debug)]
@@ -108,6 +109,26 @@ impl DNSMessage {
         response
     }
 
+    pub fn dumb_resp_from_request(&self) -> DNSMessage
+    {
+        let mut response = DNSMessage{
+            header: self.header.clone(),
+            questions: self.questions.clone(),
+            answer_records: vec![],
+            authority_records: vec![],
+            additional_records: vec![],
+            peer: self.peer
+        };
+
+        response.header.direction = Direction::Response;
+        response.header.response = ResponseCode::NotImplemented;
+        response.header.answer_record_count = 0;
+        response.header.authority_record_count = 0;
+        response.header.additional_record_count = 0;
+
+        response
+    }
+
     pub fn empty_resp_from_request(&self) -> DNSMessage
     {
         let mut response = DNSMessage{
@@ -128,6 +149,35 @@ impl DNSMessage {
         if response.header.recursion_desired {
             response.header.recursion_available = true;
         }
+
+        response
+    }
+
+    pub fn protocol_error_from_request(&self, error_code: RequestError) -> DNSMessage
+    {
+        let txt = Box::new(TXTRdata::from(String::new()));
+
+        let mut response = DNSMessage{
+            header: self.header.clone(),
+            questions: self.questions.clone(),
+            answer_records: vec![ResourceRecord {
+                name_offset: 12,
+                answer_type: QType::TXT,
+                class: QClass::Internet,
+                ttl: 0,
+                rd_length: txt.to_bytes().len() as u16,
+                r_data: txt
+            }],
+            authority_records: vec![],
+            additional_records: vec![],
+            peer: self.peer
+        };
+
+        response.header.direction = Direction::Response;
+        response.header.response = ResponseCode::ServerFailure;
+        response.header.answer_record_count = 1;
+        response.header.authority_record_count = 0;
+        response.header.additional_record_count = 0;
 
         response
     }

@@ -5,8 +5,8 @@ fn matching_shared_secrets() {
     let (secret_alice, point_alice) = get_random_asym_pair();
     let (secret_bob, point_bob) = get_random_asym_pair();
 
-    let shared_alice = get_shared_asym_secret(secret_alice, point_bob).unwrap();
-    let shared_bob = get_shared_asym_secret(secret_bob, point_alice).unwrap();
+    let shared_alice = get_shared_asym_secret(&secret_alice, &point_bob).unwrap();
+    let shared_bob = get_shared_asym_secret(&secret_bob, &point_alice).unwrap();
 
     assert_eq!(shared_alice.raw_secret_bytes(), shared_bob.raw_secret_bytes());
 }
@@ -19,8 +19,8 @@ fn arbitrary_string_back_and_forth() {
     let (secret_alice, point_alice) = get_random_asym_pair();
     let (secret_bob, point_bob) = get_random_asym_pair();
 
-    let shared_alice = get_shared_asym_secret(secret_alice, point_bob).unwrap();
-    let shared_bob = get_shared_asym_secret(secret_bob, point_alice).unwrap();
+    let shared_alice = get_shared_asym_secret(&secret_alice, &point_bob).unwrap();
+    let shared_bob = get_shared_asym_secret(&secret_bob, &point_alice).unwrap();
 
     assert_eq!(shared_alice.raw_secret_bytes(), shared_bob.raw_secret_bytes());
 

@@ -17,7 +17,6 @@ pub use cname_rdata::CnameRdata;
 mod tests;
 
 use std::fmt::Debug;
-use std::fmt::Display;
 use crate::byte::{four_byte_combine, four_byte_split, push_split_bytes, two_byte_combine};
 use crate::message::question::{DNSQuestion, QClass, QType};
 

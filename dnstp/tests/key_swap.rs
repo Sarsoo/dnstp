@@ -45,15 +45,19 @@ fn test_key_swap()
     //   SERVER
     /////////////////
 
+    let question_count = message.questions.len();
     // handle message "received by client"
-    let resp = decode_key_request(message).unwrap();
+    let resp = decode_key_request(&message).unwrap();
+
+    assert_eq!(question_count, resp.response.questions.len());
+    assert_eq!(question_count, resp.response.answer_records.len());
 
     ////////////
     // CLIENT
     ////////////
 
     // client has received message from above and constructs shared secret
-    let shared_secret_client = asym_to_sym_key(&get_shared_asym_secret(client_private, resp.server_public).unwrap());
+    let shared_secret_client = asym_to_sym_key(&get_shared_asym_secret(&client_private, &resp.server_public).unwrap());
 
     ///////////////////////////////
     // TEST ENCRYPTION/DECRYPTION

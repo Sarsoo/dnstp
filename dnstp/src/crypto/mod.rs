@@ -37,9 +37,9 @@ pub fn get_random_asym_pair() -> (EphemeralSecret, String)
 }
 
 /// Use one private key and an opposing public key to arrive at the same shared secret
-pub fn get_shared_asym_secret(secret: EphemeralSecret, opposing_public_key: String) -> Result<SharedSecret<NistP256>, ()> {
+pub fn get_shared_asym_secret(secret: &EphemeralSecret, opposing_public_key: &String) -> Result<SharedSecret<NistP256>, ()> {
 
-    match PublicKey::from_str(&opposing_public_key) {
+    match PublicKey::from_str(opposing_public_key) {
         Ok(other_public) => {
             Ok(secret.diffie_hellman(&other_public))
         }

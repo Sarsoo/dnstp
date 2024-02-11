@@ -1,4 +1,3 @@
-use crate::crypto::{fatten_public_key, get_random_asym_pair, trim_public_key};
 use crate::string::encode_domain_name;
 use super::*;
 use super::encryption::*;
