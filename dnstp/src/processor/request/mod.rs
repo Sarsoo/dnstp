@@ -10,7 +10,7 @@ use crate::message::{DNSMessage, QType};
 use crate::net::{NetworkMessagePtr};
 use crate::message_parser::parse_message;
 use crate::processor::print_error;
-use crate::processor::request::encryption::{decode_key_request, KeyDecodeError};
+use crate::processor::request::encryption::{decode_key_request, DecodeKeyRequestError};
 use crate::{RequestError, send_message};
 
 pub mod encryption;
@@ -137,16 +137,16 @@ impl RequestProcesor {
             }
             Err(e) => {
                 match e {
-                    KeyDecodeError::QuestionCount(qc) => {
+                    DecodeKeyRequestError::QuestionCount(qc) => {
                         error!("[{}] failed to parse public key, wrong question count [{}]", peer, qc);
                     }
-                    KeyDecodeError::FirstQuestionNotA(qtype) => {
+                    DecodeKeyRequestError::FirstQuestionNotA(qtype) => {
                         error!("[{}] failed to parse public key, first question wasn't an A request [{}]", peer, qtype);
                     }
-                    KeyDecodeError::SecondQuestionNotA(qtype) => {
+                    DecodeKeyRequestError::SecondQuestionNotA(qtype) => {
                         error!("[{}] failed to parse public key, second question wasn't an A request [{}]", peer, qtype);
                     }
-                    KeyDecodeError::SharedSecretDerivation => {
+                    DecodeKeyRequestError::SharedSecretDerivation => {
                         error!("[{}] failed to parse public key, failed to derived shared secret", peer);
                     }
                 }

@@ -34,6 +34,12 @@ pub fn print_error(e: MessageParseError, peer: &SocketAddr)
                 QuestionParseError::QClassParse(ce) => {
                     error!("[{}] failed to parse questions of received message, qclass error: [{}]", peer, ce);
                 }
+                QuestionParseError::UTF8Parse => {
+                    error!("[{}] failed to parse questions of received message, failed to UTF-8 parse hostname", peer);
+                }
+                QuestionParseError::URLDecode => {
+                    error!("[{}] failed to parse questions of received message, failed to URL decode hostname", peer);
+                }
             }
         }
         MessageParseError::RecordParse(rp) => {

@@ -3,12 +3,13 @@ mod encryption;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::info;
+use log::{error, info};
 use crate::client_crypto_context::ClientCryptoContext;
 use crate::net::raw_request::NetworkMessagePtr;
 use crate::message_parser::parse_message;
 use crate::processor::print_error;
-use crate::processor::response::encryption::decode_key_response;
+use crate::processor::response::encryption::{decode_key_response, DecodeKeyResponseError};
+use crate::string::DomainDecodeError;
 
 pub struct ResponseProcesor {
     message_channel: Option<Sender<NetworkMessagePtr>>,
@@ -40,7 +41,29 @@ impl ResponseProcesor {
                     Ok(r) => {
                         info!("received dns message: {:?}", r);
 
-                        decode_key_response(&r, crypto_context.clone());
+                        match decode_key_response(&r, crypto_context.clone())
+                        {
+                            Ok(_) => {
+                                info!("successfully decoded key response from server");
+                            }
+                            Err(e) => {
+                                match e {
+                                    DecodeKeyResponseError::DomainDecode(dd) => {
+                                        match dd {
+                                            DomainDecodeError::UTF8Parse => {
+                                                error!("failed to decode key response from server, failed to UTF-8 parse response");
+                                            }
+                                            DomainDecodeError::URLDecode => {
+                                                error!("failed to decode key response from server, failed to URL decode response");
+                                            }
+                                        }
+                                    }
+                                    DecodeKeyResponseError::KeyDerivation => {
+                                        error!("failed to decode key response from server, key derivation failed");
+                                    }
+                                }
+                            }
+                        }
                     }
                     Err(e) => {
                         print_error(e, &peer);
@@ -48,7 +71,7 @@ impl ResponseProcesor {
                 }
             }
 
-            info!("message processing thread finishing")
+            info!("message processing thread finishing");
         });
     }
 

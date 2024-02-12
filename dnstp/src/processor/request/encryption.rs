@@ -1,10 +1,11 @@
 use std::net::Ipv4Addr;
 use p256::ecdh::EphemeralSecret;
 use crate::clients::Client;
-use crate::crypto::{asym_to_sym_key, fatten_public_key, get_random_asym_pair, get_shared_asym_secret, trim_public_key};
+use crate::crypto::{asym_to_sym_key, get_random_asym_pair, get_shared_asym_secret, trim_public_key};
 use crate::message::{ARdata, DNSMessage, QClass, QType, ResourceRecord};
 use crate::message::record::CnameRdata;
-use crate::string::{append_base_domain_to_key, encode_domain_name, strip_base_domain_from_key};
+use crate::string;
+use crate::string::{append_base_domain_to_key, encode_domain_name};
 
 /// Result of a client's handshake request including server key pair and prepared response
 pub struct KeySwapContext {
@@ -26,17 +27,8 @@ pub fn get_key_request_with_base_domain(base_domain: String) -> (EphemeralSecret
     (private, append_base_domain_to_key(trim_public_key(&public), &base_domain))
 }
 
-/// Extract the client's public key from the DNS message, turn the hostname back into the full fat public key with --- BEGIN KEY --- headers and trailers
-pub fn get_fattened_public_key(key_question: &String) -> (String, String)
-{
-    let public_key = key_question;
-    let (trimmed_public_key, base_domain) = strip_base_domain_from_key(public_key);
-
-    (fatten_public_key(&trimmed_public_key), base_domain)
-}
-
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Copy, Clone)]
-pub enum KeyDecodeError {
+pub enum DecodeKeyRequestError {
     QuestionCount(usize),
     FirstQuestionNotA(QType),
     SecondQuestionNotA(QType),
@@ -46,24 +38,24 @@ pub enum KeyDecodeError {
 /// Take a client's handshake request, process the crypto and prepare a response
 ///
 /// Includes generating a server key pair, using the public key in the response, deriving the shared secret.
-pub fn decode_key_request(message: &DNSMessage) -> Result<KeySwapContext, KeyDecodeError>
+pub fn decode_key_request(message: &DNSMessage) -> Result<KeySwapContext, DecodeKeyRequestError>
 {
     if message.questions.len() == 2 {
 
         if message.questions[0].qtype != QType::A
         {
-            return Err(KeyDecodeError::FirstQuestionNotA(message.questions[0].qtype));
+            return Err(DecodeKeyRequestError::FirstQuestionNotA(message.questions[0].qtype));
         }
 
         let key_question = &message.questions[1];
 
         if key_question.qtype != QType::A
         {
-            return Err(KeyDecodeError::SecondQuestionNotA(key_question.qtype));
+            return Err(DecodeKeyRequestError::SecondQuestionNotA(key_question.qtype));
         }
 
         // key is transmitted wihout --- BEGIN KEY -- header and trailer bits and with '.' instead of new lines
-        let (fattened_public_key, base_domain) = get_fattened_public_key(&key_question.qname);
+        let (fattened_public_key, base_domain) = string::get_fattened_public_key(&key_question.qname);
         // generate the servers public/private key pair
         let (server_private, server_public) = get_random_asym_pair();
 
@@ -116,12 +108,12 @@ pub fn decode_key_request(message: &DNSMessage) -> Result<KeySwapContext, KeyDec
                 });
             }
             Err(_) => {
-                return Err(KeyDecodeError::SharedSecretDerivation);
+                return Err(DecodeKeyRequestError::SharedSecretDerivation);
             }
         }
     }
     else
     {
-        return Err(KeyDecodeError::QuestionCount(message.questions.len()));
+        return Err(DecodeKeyRequestError::QuestionCount(message.questions.len()));
     }
 }

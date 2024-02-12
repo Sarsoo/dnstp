@@ -137,7 +137,9 @@ pub fn questions_to_bytes(questions: &Vec<DNSQuestion>) -> Vec<u8>
 pub enum QuestionParseError {
     ShortLength(usize),
     QTypeParse(u16),
-    QClassParse(u16)
+    QClassParse(u16),
+    UTF8Parse,
+    URLDecode
 }
 
 pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(Vec<DNSQuestion>, Vec<u8>), QuestionParseError>
@@ -196,18 +198,34 @@ pub fn questions_from_bytes(bytes: Vec<u8>, total_questions: u16) -> Result<(Vec
                             match (two_byte_combine(qtype_1, qtype_2).try_into(),
                                    two_byte_combine(qclass_1, byte).try_into()) {
                                 (Ok(qtype), Ok(qclass)) => {
-                                    questions.push(DNSQuestion {
-                                        qname: decode(String::from_utf8(current_query.clone()).unwrap().as_str()).unwrap().to_string(),
-                                        qtype,
-                                        qclass
-                                    });
 
-                                    current_length = None;
-                                    remaining_length = byte;
-                                    current_query.clear();
-                                    current_qtype = (None, None);
-                                    current_qclass = (None, None);
-                                    trailers_reached = false;
+                                    match String::from_utf8(current_query.clone()) {
+                                        Ok(parsed_query) => {
+                                            match decode(parsed_query.as_str())
+                                            {
+                                                Ok(decoded_query) => {
+                                                    questions.push(DNSQuestion {
+                                                        qname: decoded_query.to_string(),
+                                                        qtype,
+                                                        qclass
+                                                    });
+
+                                                    current_length = None;
+                                                    remaining_length = byte;
+                                                    current_query.clear();
+                                                    current_qtype = (None, None);
+                                                    current_qclass = (None, None);
+                                                    trailers_reached = false;
+                                                }
+                                                Err(_) => {
+                                                    return Err(QuestionParseError::URLDecode);
+                                                }
+                                            }
+                                        }
+                                        Err(_) => {
+                                            return Err(QuestionParseError::UTF8Parse);
+                                        }
+                                    }
                                 }
                                 (Err(qtype_e), _) => {
                                     return Err(QuestionParseError::QTypeParse(qtype_e));
