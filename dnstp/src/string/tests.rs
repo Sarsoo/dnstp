@@ -18,7 +18,7 @@ fn test_encode_decode()
     let payload = "google.com";
 
     let encoded = encode_domain_name(&payload.to_string());
-    let decoded = decode_domain_name(encoded);
+    let decoded = decode_domain_name(encoded).unwrap();
 
     assert_eq!(payload, decoded);
 }
@@ -29,7 +29,7 @@ fn test_encode_decode_two()
     let payload = "sub.domain.com";
 
     let encoded = encode_domain_name(&payload.to_string());
-    let decoded = decode_domain_name(encoded);
+    let decoded = decode_domain_name(encoded).unwrap();
 
     assert_eq!(payload, decoded);
 }
