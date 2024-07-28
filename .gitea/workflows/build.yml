@@ -50,7 +50,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --manifest-path ./dnstp --index https://gitea.sheep-ghoul.ts.net/sarsoo/_cargo-index.git --registry sparse+https://git.lab.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/ --token ${{ secrets.DOCKERHUB_TOKEN }} 
+          args: --manifest-path ./dnstp --registry sparse+https://git.lab.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/ --token ${{ secrets.DOCKERHUB_TOKEN }}
 
   package:
     runs-on: ubuntu-latest
