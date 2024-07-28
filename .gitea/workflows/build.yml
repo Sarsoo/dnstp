@@ -52,8 +52,12 @@ jobs:
           [registry]
           default = "sargit"
           
-          [registries.sargit]
-          index = "sparse+https://gitea.sheep-ghoul.ts.net/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/"
+          [registries.gitea]
+          index = "sparse+https://git.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/" # Sparse index
+        # index = "https://git.sarsoo.xyz/sarsoo/_cargo-index.git" # Git
+
+          [net]
+          git-fetch-with-cli = true
           EOF
 
       - name: Cargo Publish
