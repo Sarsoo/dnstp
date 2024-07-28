@@ -52,7 +52,7 @@ jobs:
           [registry]
           default = "sargit"
           
-          [registries.gitea]
+          [registries.sargit]
           index = "sparse+https://git.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/"
 
           [net]
