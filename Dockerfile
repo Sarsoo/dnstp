@@ -1,4 +1,4 @@
-FROM rust:1.75.0-alpine3.19 as build
+FROM rust:1.78.0-alpine3.19 as build
 RUN apk add --no-cache musl-dev
 
 COPY . /dnstp/

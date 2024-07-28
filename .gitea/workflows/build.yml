@@ -30,6 +30,28 @@ jobs:
         with:
           command: test
 
+  publishLib:
+    runs-on: ubuntu-latest
+    name: Package Library
+    needs: [ build ] # for ignoring bad builds
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          github-server-url: https://gitea.sheep-ghoul.ts.net
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cargo Publish
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --manifest-path ./dnstp --index https://gitea.sheep-ghoul.ts.net/sarsoo/_cargo-index.git --registry sparse+https://git.lab.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/ --token ${{ secrets.DOCKERHUB_TOKEN }} 
+
   package:
     runs-on: ubuntu-latest
     name: Package Container
