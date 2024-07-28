@@ -59,11 +59,18 @@ jobs:
           git-fetch-with-cli = true
           EOF
 
+      - name: Add SarGit Credentials
+        run: |
+          cat <<EOF > ~/.cargo/credentials.toml
+          [registries.sargit]
+          token = "Bearer ${{ secrets.DOCKERHUB_TOKEN }}"
+          EOF
+
       - name: Cargo Publish
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --token "${{ secrets.DOCKERHUB_TOKEN }}" --package dnstplib
+          args: --package dnstplib
 
   package:
     runs-on: ubuntu-latest
