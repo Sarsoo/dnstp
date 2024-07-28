@@ -60,7 +60,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --token ${{ secrets.DOCKERHUB_TOKEN }} --package dnstp
+          args: --token ${{ secrets.DOCKERHUB_TOKEN }} --package dnstplib
 
   package:
     runs-on: ubuntu-latest
