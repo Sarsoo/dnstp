@@ -53,8 +53,7 @@ jobs:
           default = "sargit"
           
           [registries.gitea]
-          index = "sparse+https://git.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/" # Sparse index
-        # index = "https://git.sarsoo.xyz/sarsoo/_cargo-index.git" # Git
+          index = "sparse+https://git.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/"
 
           [net]
           git-fetch-with-cli = true
@@ -64,7 +63,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --token ${{ secrets.DOCKERHUB_TOKEN }} --package dnstplib
+          args: --token ${{ secrets.GITEA_TOKEN }} --package dnstplib
 
   package:
     runs-on: ubuntu-latest
@@ -84,7 +83,7 @@ jobs:
         with:
           registry: gitea.sheep-ghoul.ts.net
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.GITEA_TOKEN }}
 
       - name: Build & Push Container
         uses: docker/build-push-action@v2
