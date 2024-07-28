@@ -53,7 +53,7 @@ jobs:
           default = "sargit"
           
           [registries.sargit]
-          index = "sparse+https://git.lab.sarsoo.xyz/api/packages/sarsoo/cargo/"
+          index = "sparse+https://gitea.sheep-ghoul.ts.net/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/"
           EOF
 
       - name: Cargo Publish
