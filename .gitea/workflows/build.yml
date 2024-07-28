@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with: 
+        with:
           github-server-url: https://gitea.sheep-ghoul.ts.net
 
       - name: Install Rust
@@ -46,11 +46,21 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Add SarGit Repo
+        run: |
+          cat <<EOF > ~/.cargo/config.toml
+          [registry]
+          default = "sargit"
+          
+          [registries.sargit]
+          index = "sparse+https://git.lab.sarsoo.xyz/api/packages/sarsoo/cargo/"
+          EOF
+
       - name: Cargo Publish
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --manifest-path ./dnstp --registry sparse+https://git.lab.sarsoo.xyz/api/packages/${{ secrets.DOCKERHUB_USERNAME }}/cargo/ --token ${{ secrets.DOCKERHUB_TOKEN }}
+          args: --token ${{ secrets.DOCKERHUB_TOKEN }}
 
   package:
     runs-on: ubuntu-latest
@@ -59,7 +69,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
-        with: 
+        with:
           github-server-url: https://gitea.sheep-ghoul.ts.net
 
       - name: Set up Docker Buildx
