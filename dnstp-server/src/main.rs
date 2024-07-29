@@ -17,6 +17,7 @@ use dnstplib::processor::RequestProcesor;
 
 /// Command-line arguments for configuring the server
 #[derive(Parser, Debug)]
+#[command(name = "DNSTPd")]
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Addresses to bind server to

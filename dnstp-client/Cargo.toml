@@ -1,6 +1,8 @@
 [package]
 name = "dnstp-client"
-version = "0.1.0"
+version.workspace = true
+authors.workspace = true
+documentation.workspace = true
 edition = "2021"
 publish = false
 
@@ -12,3 +14,4 @@ clap = { version = "4.5.11", features = ["derive"] }
 log = "0.4.22"
 simplelog = "0.12.2"
 rand = "0.8.5"
+base64 = "0.22.1"

@@ -49,14 +49,6 @@ pub fn get_shared_asym_secret(secret: &EphemeralSecret, opposing_public_key: &St
     }
 }
 
-// pub fn generate_aes_nonce() -> Nonce
-// {
-//     let mut nonce_buffer: [u8; 12] = [0; 12];
-//     &OsRng.fill_bytes(&mut nonce_buffer);
-//
-//     Nonce::from(nonce_buffer)
-// }
-
 /// Generate a safe nonce to use in symmetric encryption
 pub fn generate_aes_nonce() -> Nonce
 {

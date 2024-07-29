@@ -3,7 +3,7 @@
 use crate::byte;
 use crate::message::{DNSMessage, Direction, DNSHeader, Opcode, ResponseCode, QuestionParseError, questions_from_bytes, records_from_bytes, RecordParseError};
 use crate::net::NetworkMessage;
-use crate::message_parser::MessageParseError::{HeaderParse, QuesionsParse};
+use crate::message::MessageParseError::{HeaderParse, QuesionsParse};
 
 pub const ID_START: usize = 0;
 pub const FLAGS_START: usize = 2;

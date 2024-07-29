@@ -6,3 +6,8 @@ members = [
     "dnstp-client",
     "dnstp-server",
 ]
+
+[workspace.package]
+version = "0.1.1"
+authors = ["sarsoo <andy@sarsoo.xyz>"]
+documentation = "https://sarsoo.github.io/dnstp"

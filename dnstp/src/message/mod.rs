@@ -3,8 +3,10 @@ pub mod header;
 pub mod question;
 pub mod message;
 pub mod record;
+pub mod message_parser;
 
-pub use question::{DNSQuestion, QClass, QType, QuestionParseError, questions_to_bytes, questions_from_bytes};
-pub use record::{ResourceRecord, RawRData, RData, ARdata, AAAARdata, TXTRdata, RecordParseError, records_to_bytes, records_from_bytes};
-pub use header::{DNSHeader, Direction, Opcode, ResponseCode, HEADER_SIZE};
+pub use question::{DNSQuestion, QClass, QType, QuestionParseError, questions_from_bytes, questions_to_bytes};
+pub use record::{AAAARdata, ARdata, RawRData, RData, RecordParseError, records_from_bytes, records_to_bytes, ResourceRecord, TXTRdata};
+pub use header::{Direction, DNSHeader, HEADER_SIZE, Opcode, ResponseCode};
 pub use message::DNSMessage;
+pub use message_parser::*;

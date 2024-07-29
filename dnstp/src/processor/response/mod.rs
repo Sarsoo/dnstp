@@ -3,10 +3,10 @@ mod encryption;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::{error, info};
-use crate::client_crypto_context::ClientCryptoContext;
+use log::{error, info, debug};
+use crate::session::client_crypto_context::ClientCryptoContext;
 use crate::net::raw_request::NetworkMessagePtr;
-use crate::message_parser::parse_message;
+use crate::message::parse_message;
 use crate::processor::print_error;
 use crate::processor::response::encryption::{decode_key_response, DecodeKeyResponseError};
 use crate::string::DomainDecodeError;
@@ -39,7 +39,7 @@ impl ResponseProcesor {
 
                 match parse_message(*m) {
                     Ok(r) => {
-                        info!("received dns message: {:?}", r);
+                        debug!("received dns message: {:?}", r);
 
                         match decode_key_response(&r, crypto_context.clone())
                         {

@@ -19,7 +19,7 @@ fn one_question_back_and_forth() {
     let mut q_bytes = q.to_bytes();
     q_bytes.append(&mut vec![0, 0, 0, 0, 0, 0]);
 
-    let (q_reconstructed, q_remaining) = questions_from_bytes(q_bytes, 1).unwrap();
+    let (q_reconstructed, _q_remaining) = questions_from_bytes(q_bytes, 1).unwrap();
 
     assert_questions_eq!(q, q_reconstructed[0]);
 }
@@ -43,7 +43,7 @@ fn two_questions_back_and_forth() {
 
     q_bytes.append(&mut q2_bytes);
 
-    let (q_reconstructed, q_remaining) = questions_from_bytes(q_bytes, 2).unwrap();
+    let (q_reconstructed, _q_remaining) = questions_from_bytes(q_bytes, 2).unwrap();
 
     assert_questions_eq!(q, q_reconstructed[0]);
     assert_questions_eq!(q2, q_reconstructed[1]);
@@ -76,7 +76,7 @@ fn three_questions_back_and_forth() {
     q_bytes.append(&mut q2_bytes);
     q_bytes.append(&mut q3_bytes);
 
-    let (q_reconstructed, q_remaining) = questions_from_bytes(q_bytes, 3).unwrap();
+    let (q_reconstructed, _q_remaining) = questions_from_bytes(q_bytes, 3).unwrap();
 
     assert_questions_eq!(q, q_reconstructed[0]);
     assert_questions_eq!(q2, q_reconstructed[1]);

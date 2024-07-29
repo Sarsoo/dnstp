@@ -15,6 +15,7 @@ use crate::test::send_test_requests;
 use crate::upload::upload;
 
 #[derive(Parser, Debug)]
+#[command(name = "DNSTP")]
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[clap(subcommand)]
@@ -33,7 +34,7 @@ enum Command {
         #[clap(flatten)]
         net_options: NetSettings,
         #[arg(short, long)]
-        value: String
+        value: Vec<String>
     },
     /// Download a payload from the remote server
     Download {

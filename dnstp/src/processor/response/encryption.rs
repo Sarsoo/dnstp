@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use crate::client_crypto_context::ClientCryptoContext;
+use crate::session::client_crypto_context::ClientCryptoContext;
 use crate::crypto::{asym_to_sym_key, get_shared_asym_secret};
 use crate::message::DNSMessage;
 use crate::string::get_fattened_public_key;

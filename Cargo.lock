@@ -94,6 +94,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
 
 [[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
+
+[[package]]
 name = "base64ct"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -251,7 +257,7 @@ dependencies = [
 
 [[package]]
 name = "dnstp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "dnstplib",
@@ -261,8 +267,9 @@ dependencies = [
 
 [[package]]
 name = "dnstp-client"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "base64",
  "clap",
  "dnstplib",
  "log",
@@ -272,9 +279,10 @@ dependencies = [
 
 [[package]]
 name = "dnstplib"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aes-gcm-siv",
+ "base64",
  "log",
  "p256",
  "rand_core",

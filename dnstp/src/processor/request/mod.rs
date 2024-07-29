@@ -2,13 +2,12 @@ use std::net::SocketAddr;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::{error, info};
-use crate::clients::Clients;
+use log::{debug, error, info};
+use crate::session::Clients;
 use crate::config::DomainConfig;
 
-use crate::message::{DNSMessage, QType};
+use crate::message::{DNSMessage, QType, parse_message};
 use crate::net::{NetworkMessagePtr};
-use crate::message_parser::parse_message;
 use crate::processor::print_error;
 use crate::processor::request::encryption::{decode_key_request, DecodeKeyRequestError};
 use crate::{RequestError, send_message};
@@ -60,7 +59,7 @@ impl RequestProcesor {
 
                 match parse_message(*m) {
                     Ok(r) => {
-                        info!("received dns message: {:?}", r);
+                        debug!("received dns message: {:?}", r);
 
                         // If there is a question containing the protocol base domain, treat it as a dnstp request
                         // (handshake, upload, download) and handle as such
@@ -154,20 +153,6 @@ impl RequestProcesor {
                 Self::send_protocol_error(RequestError::CryptoFailure, &r, &sending_channel);
             }
         }
-    }
-
-    fn handle_download_request(r: DNSMessage, sending_channel: &Sender<NetworkMessagePtr>, clients: &Arc<Mutex<Clients>>, peer: SocketAddr)
-    {
-        info!("[{}] received download request", peer);
-        let client_id = &r.questions[0].qname;
-        clients.lock().unwrap().bump_last_seen(client_id);
-    }
-
-    fn handle_upload_request(r: DNSMessage, sending_channel: &Sender<NetworkMessagePtr>, clients: &Arc<Mutex<Clients>>, peer: SocketAddr)
-    {
-        info!("[{}] received upload request", peer);
-        let client_id = &r.questions[0].qname;
-        clients.lock().unwrap().bump_last_seen(client_id);
     }
 
     pub fn get_message_channel(&mut self) -> Option<Sender<NetworkMessagePtr>>

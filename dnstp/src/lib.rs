@@ -1,8 +1,6 @@
 //! # Common Functionality
 //! The vast majority of functionality is in this library crate. The client and server executable crates are really just wiring up bits and pieces from this library.
 
-pub mod message_parser;
-
 mod byte;
 pub mod processor;
 pub mod message;
@@ -10,10 +8,9 @@ pub mod net;
 pub mod string;
 pub mod config;
 pub mod crypto;
-pub mod clients;
-pub mod client_crypto_context;
+pub mod session;
 
-use std::sync::mpsc::{Sender};
+use std::sync::mpsc::Sender;
 use log::error;
 pub use config::DomainConfig;
 use crate::message::DNSMessage;

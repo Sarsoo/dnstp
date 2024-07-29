@@ -84,10 +84,12 @@ impl DNSSocket {
                             Ok((read_count, peer)) => {
 
                                 if read_count > HEADER_SIZE {
-                                    message_sender.send(Box::new(NetworkMessage {
+                                    if let Err(_) = message_sender.send(Box::new(NetworkMessage {
                                         buffer: buf,
                                         peer
-                                    }));
+                                    })) {
+                                        
+                                    }
                                 }
                                 else {
                                     debug!("skipping processing message from [{}], message isn't longer than standard header", peer);
@@ -155,11 +157,15 @@ impl DNSSocket {
     {
         // if let Some(t) = &mut self.thread {
             if let Some(k) = &self.rx_thread_killer {
-                k.send(());
+                if let Err(_) = k.send(()) {
+                    
+                }
                 // t.join();
             }
             if let Some(k) = &self.tx_thread_killer {
-                k.send(());
+                if let Err(_) = k.send(()) {
+                    
+                }
                 // t.join();
             }
         // }

@@ -153,7 +153,7 @@ impl DNSMessage {
         response
     }
 
-    pub fn protocol_error_from_request(&self, error_code: RequestError) -> DNSMessage
+    pub fn protocol_error_from_request(&self, _error_code: RequestError) -> DNSMessage
     {
         let txt = Box::new(TXTRdata::from(String::new()));
 

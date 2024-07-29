@@ -73,4 +73,15 @@ impl Clients {
             }
         }
     }
+
+    pub fn get_shared_key(&mut self, client_id: &String) -> Result<&Aes256GcmSiv, ()>
+    {
+        match self.client_map.get_mut(client_id)
+        {
+            None => Err(()),
+            Some(client) => {
+                Ok(&client.shared_key)
+            }
+        }
+    }
 }

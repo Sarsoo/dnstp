@@ -4,7 +4,7 @@ use std::thread;
 use std::time::Duration;
 use log::info;
 use rand::RngCore;
-use dnstplib::client_crypto_context::ClientCryptoContext;
+use dnstplib::session::client_crypto_context::ClientCryptoContext;
 use dnstplib::DomainConfig;
 use dnstplib::message::DNSMessage;
 use dnstplib::net::{DNSSocket, NetworkMessage};
@@ -42,10 +42,12 @@ pub fn send_test_requests(args: NetSettings)
 
         let bytes = message.to_bytes();
 
-        tx_channel.send(Box::new(NetworkMessage {
+        if let Err(_) = tx_channel.send(Box::new(NetworkMessage {
             buffer: Box::new(bytes),
             peer: args.address.parse().unwrap()
-        }));
+        })) {
+            
+        }
 
         thread::sleep(Duration::from_secs(1));
     }

@@ -28,7 +28,7 @@ fn one_answer_back_and_forth() {
     let mut q_bytes = q.to_bytes();
     q_bytes.append(&mut vec![0, 0, 0, 0, 0, 0]);
 
-    let (q_reconstructed, q_remaining) = records_from_bytes(q_bytes, 1).unwrap();
+    let (q_reconstructed, _q_remaining) = records_from_bytes(q_bytes, 1).unwrap();
 
     assert_record_eq!(q, q_reconstructed[0]);
 }
@@ -59,7 +59,7 @@ fn two_answers_back_and_forth() {
     q_bytes.append(&mut q_2.to_bytes());
     q_bytes.append(&mut vec![0, 0, 0, 0, 0, 0]);
 
-    let (q_reconstructed, q_remaining) = records_from_bytes(q_bytes, 2).unwrap();
+    let (q_reconstructed, _q_remaining) = records_from_bytes(q_bytes, 2).unwrap();
 
     assert_record_eq!(q, q_reconstructed[0]);
     assert_record_eq!(q_2, q_reconstructed[1]);

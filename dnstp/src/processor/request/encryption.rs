@@ -1,6 +1,6 @@
 use std::net::Ipv4Addr;
 use p256::ecdh::EphemeralSecret;
-use crate::clients::Client;
+use crate::session::clients::Client;
 use crate::crypto::{asym_to_sym_key, get_random_asym_pair, get_shared_asym_secret, trim_public_key};
 use crate::message::{ARdata, DNSMessage, QClass, QType, ResourceRecord};
 use crate::message::record::CnameRdata;

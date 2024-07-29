@@ -3,16 +3,14 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use log::info;
-use rand::RngCore;
 use rand::rngs::OsRng;
-use dnstplib::client_crypto_context::ClientCryptoContext;
+use dnstplib::session::{ClientCryptoContext, generate_client_handshake_message, generate_string_encryption_message};
 use dnstplib::{DomainConfig, send_message};
-use dnstplib::message::{Direction, DNSHeader, DNSMessage, DNSQuestion, Opcode, QClass, QType, ResponseCode};
 use dnstplib::net::DNSSocket;
 use dnstplib::processor::ResponseProcesor;
 use crate::NetSettings;
 
-pub fn upload(net_settings: NetSettings, value: String)
+pub fn upload(net_settings: NetSettings, values: Vec<String>)
 {
     let address = SocketAddr::from(([127, 0, 0, 1], 0));
 
@@ -35,39 +33,7 @@ pub fn upload(net_settings: NetSettings, value: String)
 
     info!("sending handshake...");
 
-    let message = DNSMessage {
-        header: DNSHeader {
-            id: OsRng.next_u32() as u16,
-            direction: Direction::Request,
-            opcode: Opcode::Query,
-            authoritative: false,
-            truncation: false,
-            recursion_desired: false,
-            recursion_available: false,
-            valid_zeroes: true,
-            response: ResponseCode::NoError,
-            question_count: 2,
-            answer_record_count: 0,
-            authority_record_count: 0,
-            additional_record_count: 0,
-        },
-        questions: vec![
-            DNSQuestion {
-                qname: domain_config.get_fq_key_endpoint(),
-                qtype: QType::A,
-                qclass: QClass::Internet,
-            },
-            DNSQuestion {
-                qname: crypto_context.lock().unwrap().get_public_key_domain(&domain_config.base_domain),
-                qtype: QType::A,
-                qclass: QClass::Internet,
-            }
-        ],
-        answer_records: vec![],
-        authority_records: vec![],
-        additional_records: vec![],
-        peer: net_settings.address.parse().unwrap(),
-    };
+    let message = generate_client_handshake_message(&mut OsRng, &domain_config, crypto_context.clone(), &net_settings.address);
 
     send_message(message, &tx_channel);
 
@@ -78,4 +44,19 @@ pub fn upload(net_settings: NetSettings, value: String)
     }
 
     info!("crypto complete, sending data");
+
+    for v in values {
+
+        info!("sending [{}]", v);
+        
+        if let Ok(encryption_message) = generate_string_encryption_message(
+            v,
+            &mut OsRng,
+            &domain_config,
+            crypto_context.clone(),
+            &net_settings.address
+        ) {
+            send_message(encryption_message, &tx_channel);
+        }
+    }
 }

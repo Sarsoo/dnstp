@@ -7,8 +7,7 @@ use std::net::SocketAddr;
 use log::error;
 pub use request::RequestProcesor;
 pub use response::ResponseProcesor;
-use crate::message::{QuestionParseError, RecordParseError};
-use crate::message_parser::{HeaderParseError, MessageParseError};
+use crate::message::{QuestionParseError, RecordParseError, HeaderParseError, MessageParseError};
 
 pub fn print_error(e: MessageParseError, peer: &SocketAddr)
 {
