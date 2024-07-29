@@ -34,6 +34,8 @@ enum Command {
         #[clap(flatten)]
         net_options: NetSettings,
         #[arg(short, long)]
+        key: Option<Vec<String>>,
+        #[arg(short, long)]
         value: Vec<String>
     },
     /// Download a payload from the remote server
@@ -52,7 +54,7 @@ struct NetSettings {
     #[arg(long)]
     base_domain: String,
     /// Sub-domain to handle key handling when requested
-    #[arg(short, long, default_value = "static")]
+    #[arg(long, default_value = "static")]
     key_endpoint: String,
 }
 
@@ -60,7 +62,7 @@ fn main() {
     CombinedLogger::init(
         vec![
             TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Info, Config::default(), OpenOptions::new()
+            WriteLogger::new(LevelFilter::Trace, Config::default(), OpenOptions::new()
                 .read(true)
                 .write(true)
                 .append(true)
@@ -75,8 +77,8 @@ fn main() {
         Command::Test { net_options } => {
             send_test_requests(net_options);
         }
-        Command::Upload { net_options, value } => {
-            upload(net_options, value);
+        Command::Upload { net_options, key, value } => {
+            upload(net_options, key, value);
         }
         Command::Download { net_options } => {
             download(net_options);

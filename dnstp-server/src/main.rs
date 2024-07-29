@@ -35,7 +35,7 @@ fn main() {
     CombinedLogger::init(
         vec![
             TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Info, Config::default(), OpenOptions::new()
+            WriteLogger::new(LevelFilter::Trace, Config::default(), OpenOptions::new()
                 .read(true)
                 .write(true)
                 .append(true)

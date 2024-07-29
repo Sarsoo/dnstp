@@ -95,7 +95,7 @@ impl RequestProcesor {
             info!("[{}] received request from known client", peer);
 
             // for now lets deal with three questions, first one is the client id, second is the actual request, third is the nonce
-            if r.questions.len() == 3
+            if r.questions.len() == 3 || r.questions.len() == 4
             {
                 match r.questions[1].qtype {
                     QType::A => {

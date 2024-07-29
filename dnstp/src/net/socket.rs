@@ -1,11 +1,11 @@
 use std::net::{SocketAddr, UdpSocket};
 use std::thread;
 use std::thread::{JoinHandle};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 
-use crate::message::HEADER_SIZE;
+use crate::message::{HEADER_SIZE, MESSAGE_SIZE};
 use crate::net::{NetworkMessage, NetworkMessagePtr};
 
 pub struct DNSSocket {
@@ -76,8 +76,8 @@ impl DNSSocket {
                 Some(s) => {
                     let mut cancelled = false;
                     while !cancelled {
-                        let mut buf = Box::new(Vec::with_capacity(512));
-                        buf.resize(512, 0);
+                        let mut buf = Box::new(Vec::with_capacity(MESSAGE_SIZE));
+                        buf.resize(MESSAGE_SIZE, 0);
                         let res = s.recv_from(&mut (*buf));
 
                         match res {
@@ -92,7 +92,7 @@ impl DNSSocket {
                                     }
                                 }
                                 else {
-                                    debug!("skipping processing message from [{}], message isn't longer than standard header", peer);
+                                    debug!("[{}] skipping processing message, message isn't longer than standard header", peer);
                                 }
                             }
                             Err(_) => {}
@@ -131,8 +131,14 @@ impl DNSSocket {
                     while !cancelled {
 
                         for m in &msg_rx {
+
+                            let message_length = m.buffer.len();
+                            if message_length > MESSAGE_SIZE {
+                                warn!("[{}] message is longer than standard maximum [{} bytes]", m.peer, message_length);
+                            }
+
                             if let Err(e) = s.send_to(&(*m.buffer), m.peer){
-                                error!("error sending response to [{}], {}", m.peer, e);
+                                error!("[{}] error sending response {}", m.peer, e);
                             }
                         }
 

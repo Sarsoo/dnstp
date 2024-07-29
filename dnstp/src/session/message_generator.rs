@@ -60,7 +60,7 @@ pub fn generate_string_encryption_message(value: String, rand: &mut OsRng, domai
     if let Ok(e) = encrypted {
         let encrypted_string = BASE64_STANDARD.encode(e);
         let nonce_string = BASE64_STANDARD.encode(nonce);
-        
+
         return Ok(get_string_encryption_message(
             rand.next_u32() as u16,
             crypto_context.lock().unwrap().get_public_key_domain(&domain_config.base_domain),
@@ -69,7 +69,7 @@ pub fn generate_string_encryption_message(value: String, rand: &mut OsRng, domai
             peer
         ))
     }
-    
+
     Err(())
 }
 
@@ -93,6 +93,79 @@ pub fn get_string_encryption_message(msg_id: u16, public_key_domain: String, enc
         questions: vec![
             DNSQuestion {
                 qname: public_key_domain,
+                qtype: QType::A,
+                qclass: QClass::Internet,
+            },
+            DNSQuestion {
+                qname: encrypted_string,
+                qtype: QType::A,
+                qclass: QClass::Internet,
+            },
+            DNSQuestion {
+                qname: nonce_string,
+                qtype: QType::A,
+                qclass: QClass::Internet,
+            }
+        ],
+        answer_records: vec![],
+        authority_records: vec![],
+        additional_records: vec![],
+        peer: peer.parse().unwrap(),
+    }
+}
+
+pub fn generate_key_string_encryption_message(key: String, value: String, rand: &mut OsRng, domain_config: &DomainConfig, crypto_context: Arc<Mutex<ClientCryptoContext>>, peer: &String) -> Result<DNSMessage, ()> {
+
+    let nonce = generate_aes_nonce();
+    let encrypted_key = encrypt(&crypto_context.lock().unwrap().shared_key.clone().unwrap(), &nonce, &key.clone().into_bytes());
+    let encrypted_value = encrypt(&crypto_context.lock().unwrap().shared_key.clone().unwrap(), &nonce, &value.clone().into_bytes());
+
+    match (encrypted_key, encrypted_value) {
+        (Ok(encrypted_key), Ok(encrypted_value)) => {
+            let encrypted_key = BASE64_STANDARD.encode(encrypted_key);
+            let encrypted_value = BASE64_STANDARD.encode(encrypted_value);
+            let nonce_string = BASE64_STANDARD.encode(nonce);
+
+            return Ok(get_key_string_encryption_message(
+                rand.next_u32() as u16,
+                crypto_context.lock().unwrap().get_public_key_domain(&domain_config.base_domain),
+                encrypted_key,
+                encrypted_value,
+                nonce_string,
+                peer
+            ))
+        }
+        (_, _) => {}
+    }
+
+    Err(())
+}
+
+pub fn get_key_string_encryption_message(msg_id: u16, public_key_domain: String, encrypted_key: String, encrypted_string: String, nonce_string: String, peer: &String) -> DNSMessage {
+    DNSMessage {
+        header: DNSHeader {
+            id: msg_id,
+            direction: Direction::Request,
+            opcode: Opcode::Query,
+            authoritative: false,
+            truncation: false,
+            recursion_desired: false,
+            recursion_available: false,
+            valid_zeroes: true,
+            response: ResponseCode::NoError,
+            question_count: 4,
+            answer_record_count: 0,
+            authority_record_count: 0,
+            additional_record_count: 0,
+        },
+        questions: vec![
+            DNSQuestion {
+                qname: public_key_domain,
+                qtype: QType::A,
+                qclass: QClass::Internet,
+            },
+            DNSQuestion {
+                qname: encrypted_key,
                 qtype: QType::A,
                 qclass: QClass::Internet,
             },

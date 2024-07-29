@@ -2,6 +2,8 @@ use std::net::{Ipv4Addr, SocketAddr};
 use crate::message::{DNSQuestion, DNSHeader, questions_to_bytes, Direction, ResponseCode, QType, QClass, ResourceRecord, records_to_bytes, ARdata, TXTRdata, RData};
 use crate::RequestError;
 
+pub const MESSAGE_SIZE: usize = 512;
+
 /// A DNS message which can be used as either a request or response based on its direction and composition
 #[derive(Debug)]
 pub struct DNSMessage {
