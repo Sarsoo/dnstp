@@ -257,7 +257,7 @@ dependencies = [
 
 [[package]]
 name = "dnstp"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "clap",
  "dnstplib",
@@ -267,7 +267,7 @@ dependencies = [
 
 [[package]]
 name = "dnstp-client"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64",
  "clap",
@@ -279,7 +279,7 @@ dependencies = [
 
 [[package]]
 name = "dnstplib"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "aes-gcm-siv",
  "base64",
